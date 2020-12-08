@@ -20,11 +20,21 @@ makeConf() {
 
   [[ -n "$doNetConf" ]] && network_import="./networking.nix # generated at runtime by nixos-infect"
   cat > /etc/nixos/configuration.nix << EOF
-{ ... }: {
+{ ... }: 
+{
   imports = [
     ./hardware-configuration.nix
     $network_import
     $NIXOS_IMPORT
+	$mailServer
+	$api
+	$letsencryptACME
+	$letsencryptCertbot
+	$restic
+	$bitwarden
+	$nginx
+	$nextcloud
+	$gitea
   ];
 
   boot.cleanTmpDir = true;
@@ -43,6 +53,375 @@ EOF
   imports = [ <nixpkgs/nixos/modules/profiles/qemu-guest.nix> ];
   boot.loader.grub.device = "$grubdev";
   fileSystems."/" = { device = "$rootfsdev"; fsType = "ext4"; };
+}
+EOF
+
+  mkdir -p /etc/nixos/mailserver/system
+  mkdir /etc/nixos/mailserver/
+  cat > /etc/nixos/mailserver/system/mailserver.nix << EOF
+{ config, pkgs, lib, ... }:
+{
+  imports = [
+    (builtins.fetchTarball {
+      # Pick a commit from the branch you are interested in
+      url = "https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/archive/99f843de/nixos-mailserver-99f843de.tar.gz";
+
+      # And set its hash
+      sha256 = "1af7phs8a2j26ywsm5mfhzvqmy0wdsph7ajs9s65c4r1bfq646fw";
+    })
+  ];
+
+  services.dovecot2 = {
+    enablePAM = lib.mkForce true;
+    showPAMFailure = lib.mkForce true;
+  };
+  mailserver = {
+    enable = true;
+    fqdn = "$DOMAIM";
+    domains = [ "$DOMAIN" ];
+
+    # A list of all login accounts. To create the password hashes, use
+    # mkpasswd -m sha-512 "super secret password"
+    loginAccounts = {
+	"$USER@$DOMAIN" = {
+	    hashedPassword = "$PASSWORD";
+
+            #aliases = [
+            #    "mail@example.com"
+            #];
+
+            # Make this user the catchAll address for domains blah.com and
+            # example2.com
+            catchAll = [
+		"$DOMAIN"
+            ];
+	    sieveScript = ''
+	        require ["fileinto", "mailbox"];
+		if header :contains "Chat-Version" "1.0"
+		{	
+    		  fileinto :create "DeltaChat";
+		  stop;
+		}
+	    '';
+        };
+        
+    };
+
+    # Extra virtual aliases. These are email addresses that are forwarded to
+    # loginAccounts addresses.
+    extraVirtualAliases = {
+        # address = forward address;
+	 "admin@$DOMAIN" = "$USER@$DOMAIN";
+    };
+
+    # Use Let's Encrypt certificates. Note that this needs to set up a stripped
+    # down nginx and opens port 80.
+    certificateScheme = 3;
+
+    # Enable IMAP and POP3
+    enableImap = true;
+    enableImapSsl = true;
+    enablePop3 = false;
+    enablePop3Ssl = false;
+    dkimSelector = "selector";
+
+    # Enable the ManageSieve protocol
+    enableManageSieve = true;
+
+    virusScanning = false;
+  };
+}
+EOF
+
+  mkdir -p /etc/nixos/letsencrypt
+  cat > /etc/nixos/letsencrypt/acme.nix << EOF
+{ pkgs, ... }:
+{
+  users.groups.acmerecievers = {
+    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "ocserv" ];
+  };
+  security.acme = {
+    acceptTerms = true;
+    email = "$USER@$DOMAIN";
+    certs."$DOMAIN" = {
+      group = "acmerecievers";
+    };
+  };
+}
+EOF
+
+  mkdir -p /etc/nixos/letsencrypt
+  cat > /etc/nixos/letsencrypt/acme.nix << EOF
+{ pkgs, ... }:
+{
+  systemd = {
+    timers.certbot-renew = {
+      wantedBy = [ "timers.target" ];
+      partOf = [ "certbot-renew.service" ];
+      timerConfig.OnCalendar = "monthly";
+    };
+    services.certbot-renew = {
+      path = with pkgs; [
+        letsencrypt
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+	ExecStart = "${pkgs.letsencrypt}/bin/certbot renew";
+      };
+    };
+  };
+}
+EOF
+
+  cat > /etc/nixos/letsencrypt/acme.nix << EOF
+{ pkgs, ... }:
+{
+  systemd = {
+    timers.certbot-renew = {
+      wantedBy = [ "timers.target" ];
+      partOf = [ "certbot-renew.service" ];
+      timerConfig.OnCalendar = "monthly";
+    };
+    services.certbot-renew = {
+      path = with pkgs; [
+        letsencrypt
+      ];
+      serviceConfig = {
+        Type = "oneshot";
+	ExecStart = "${pkgs.letsencrypt}/bin/certbot renew";
+      };
+    };
+  };
+}
+EOF
+
+  mkdir /etc/nixos/backup
+  cat > /etc/nixos/backup/restic.nix << EOF
+{ pkgs, ... }:
+{
+  services.restic.backups = {
+    options = {
+      passwordFile = "/etc/restic/resticPasswd";
+      repository = "s3:s3.anazonaws.com/eec1ya-backup";
+      initialize = true;
+      paths = [
+        "/var/dkim"
+        "/var/vmail"
+      ];
+      timerConfig = {
+        OnCalendar = [ "daily" ];
+      };
+      user = "restic";
+      pruneOpts = [
+        "--keep-daily 5"
+      ];
+    };
+  };
+  users.users.restic = {
+    isNormalUser = false;
+  };
+  environment.etc."restic/resticPasswd".text = ''
+sadihvkrgjkdf
+  '';
+  environment.etc."restic/s3Passwd".text = ''
+AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+  '';
+}
+EOF
+  
+  mkdir /etc/nixos/passmgr/
+  cat > /etc/nixos/passmgr/bitwarden.nix << EOF
+{ pkgs, ... }:
+{
+  services.bitwarden_rs = {
+    enable = true;
+    dbBackend = "sqlite";
+    backupDir = "/var/bitwarden/backup";
+    config = {
+      domain = "https://password.$DOMAIN/";
+      signupsAllowed = true;
+      rocketPort = 8222;
+      rocketLog = "warning";
+    };
+  };
+}
+EOF
+
+  mkdir /etc/nixos/nginx
+  cat > /etc/nixos/nginx/nginx.nix << EOF
+{ pkgs, ... }:
+{
+  services.nginx = {
+    enable = true;
+    recommendedGzipSettings = true;
+    recommendedOptimisation = true;
+    recommendedProxySettings = true;
+    recommendedTlsSettings = true;
+
+    virtualHosts = {
+      "$DOMAIN" = {
+        enableACME = true;
+        forceSSL = true;
+        locations = {
+	      "/" = {
+            proxyPass = "";
+	        extraConfig = ''
+proxy_headers_hash_max_size 512;
+proxy_headers_hash_bucket_size 128;
+	    '';
+	      };
+        };
+      };
+      "git.$DOMAIN" = {
+        enableACME = true;
+        forceSSL = true;
+        locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:3000";
+	    extraConfig = ''
+proxy_headers_hash_max_size 512;
+proxy_headers_hash_bucket_size 128;
+            '';
+	      };
+        };
+      };
+      "cloud.$DOMAIN" = {
+        enableACME = true;
+	forceSSL = true;
+        locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:80/";
+	    extraConfig = ''
+proxy_headers_hash_max_size 512;
+proxy_headers_hash_bucket_size 128;
+	    '';
+	      };
+	    };
+      };
+      "password.$DOMAIN" = {
+        enableACME = true;
+	    forceSSL = true;
+        locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:8222";
+	    extraConfig = ''
+proxy_headers_hash_max_size 512;
+proxy_headers_hash_bucket_size 128;
+	    '';
+	  };
+	};
+      };
+      "api.$DOMAIN" = {
+        enableACME = true;
+	forceSSL = true;
+        locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:1256";
+	    extraConfig = ''
+proxy_headers_hash_max_size 512;
+proxy_headers_hash_bucket_size 128;
+            '';
+	      };
+	    };
+      };
+    };
+  };
+}
+EOF
+
+cat > /etc/nixos/backup/nextcloud.nix << EOF
+{ pkgs, ... }:
+{
+  services.nextcloud = {
+    enable = true;
+    hostName = "cloud.$DOMAIN";
+
+    # Use HTTPS for links
+    https = false;
+    
+    # Auto-update Nextcloud Apps
+    autoUpdateApps.enable = true;
+    # Set what time makes sense for you
+    autoUpdateApps.startAt = "05:00:00";
+
+    config = {
+      # Further forces Nextcloud to use HTTPS
+      overwriteProtocol = "http";
+
+      # Nextcloud PostegreSQL database configuration, recommended over using SQLite
+      dbtype = "sqlite";
+      dbuser = "nextcloud";
+      dbhost = "/run/postgresql"; # nextcloud will add /.s.PGSQL.5432 by itself
+      dbname = "nextcloud";
+      dbpassFile = "/var/nextcloud-db-pass";
+
+      adminpassFile = "/var/nextcloud-admin-pass";
+      adminuser = "admin";
+    };
+  };
+}
+EOF
+
+  mkdir /etc/nixos/git
+  cat > /etc/nixos/git/gitea.nix << EOF
+{ pkgs, ... }:
+{
+  services = {
+    gitea = {
+      enable = true;
+      stateDir = "/var/lib/gitea";
+      log = {
+        rootPath = "/var/lib/gitea/log";
+        level = "Warn";
+      };
+      user = "gitea";
+      database = {
+        type = "sqlite3";
+        host = "127.0.0.1";
+        name = "gitea";
+	user = "gitea";
+	path = "/var/lib/gitea/data/gitea.db";
+	createDatabase = true;
+      };
+      ssh = {
+        enable = true;
+        clonePort = 22;
+      };
+      lfs = {
+        enable = true;
+        contentDir = "/var/lib/gitea/lfs";
+      };
+      appName = "SelfPrivacy git Service";
+      repositoryRoot = "/var/lib/gitea/repositories";
+      domain = "git.$DOMAIN";
+      rootUrl = "https://$DOMAIN/";
+      httpAddress = "0.0.0.0";
+      httpPort = 3000;
+      cookieSecure = true;
+      extraConfig = ''
+[mailer]
+ENABLED = false
+
+[ui]
+DEFAULT_THEME = arc-green
+
+[ui.meta]
+AUTHOR = $NAME $SURNAME
+DESCRIPTION = $NAME's Personal Git Repository
+KEYWORDS = development
+
+[picture]
+DISABLE_GRAVATAR = true
+
+[admin]
+ENABLE_KANBAN_BOARD = true
+
+[repository]
+FORCE_PRIVATE = false
+'';
+    };
+  };
 }
 EOF
 
