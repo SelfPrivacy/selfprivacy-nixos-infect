@@ -138,42 +138,37 @@ EOF
 { pkgs, ... }:
 {
   users.groups.acmerecievers = {
-    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "ocserv" ];
+    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "bitwarden_rs" "nextcloud" "uwsgi" ];
   };
   security.acme = {
     acceptTerms = true;
     email = "$USER@$DOMAIN";
-    certs."$DOMAIN" = {
-      group = "acmerecievers";
-    };
-  };
-}
-EOF
-
-  mkdir -p /etc/nixos/letsencrypt
-  cat > /etc/nixos/letsencrypt/acme.nix << EOF
-{ pkgs, ... }:
-{
-  systemd = {
-    timers.certbot-renew = {
-      wantedBy = [ "timers.target" ];
-      partOf = [ "certbot-renew.service" ];
-      timerConfig.OnCalendar = "monthly";
-    };
-    services.certbot-renew = {
-      path = with pkgs; [
-        letsencrypt
-      ];
-      serviceConfig = {
-        Type = "oneshot";
-	ExecStart = "${pkgs.letsencrypt}/bin/certbot renew";
+    certs = {
+      "$DOMAIN" = {
+        group = "acmerecievers";
+      };
+      "git.$DOMAIN" = {
+        group = "acmerecievers";
+      };
+      "cloud.$DOMAIN" = {
+        group = "acmerecievers";
+      };
+      "password.$DOMAIN" = {
+        group = "acmerecievers";
+      };
+      "api.$DOMAIN" = {
+        group = "acmerecievers";
+      };
+      "meet.$DOMAIN" = {
+        group = "acmerecievers";
       };
     };
   };
 }
 EOF
 
-  cat > /etc/nixos/letsencrypt/acme.nix << EOF
+  mkdir -p /etc/nixos/letsencrypt
+  cat > /etc/nixos/letsencrypt/certbot.nix << EOF
 { pkgs, ... }:
 {
   systemd = {
@@ -399,27 +394,23 @@ EOF
       httpAddress = "0.0.0.0";
       httpPort = 3000;
       cookieSecure = true;
-      extraConfig = ''
-[mailer]
-ENABLED = false
-
-[ui]
-DEFAULT_THEME = arc-green
-
-[ui.meta]
-AUTHOR = $NAME $SURNAME
-DESCRIPTION = $NAME's Personal Git Repository
-KEYWORDS = development
-
-[picture]
-DISABLE_GRAVATAR = true
-
-[admin]
-ENABLE_KANBAN_BOARD = true
-
-[repository]
-FORCE_PRIVATE = false
-'';
+      settings = {
+        mailer = {
+          ENABLED = false;
+	    };
+	    ui = {
+          DEFAULT_THEME = "arc-green";
+	    };
+	    picture = {
+          DISABLE_GRAVATAR = true;
+	    };
+	    admin = {
+          ENABLE_KANBAN_BOARD = true;
+	    };
+	    repository = {
+          FORCE_PRIVATE = false;
+	    };
+      };
     };
   };
 }
