@@ -598,7 +598,7 @@ EOF
 }
 EOF
 
-    cat /etc/nixos/videomeet/jitsi.nix << EOF
+    cat > /etc/nixos/videomeet/jitsi.nix << EOF
 { pkgs, ... }:
 {
   services.jitsi-meet = {
