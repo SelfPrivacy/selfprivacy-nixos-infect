@@ -10,12 +10,15 @@ makeConf() {
   # NB <<"EOF" quotes / $ ` in heredocs, <<EOF does not
   mkdir /etc/nixos
   mkdir -p /etc/nixos/mailserver/system
+  mkdir /etc/nixos/mailserver/userdata
   mkdir /etc/nixos/letsencrypt
   mkdir /etc/nixos/backup
   mkdir /etc/nixos/passmgr
   mkdir /etc/nixos/nginx
   mkdir /etc/nixos/git
   mkdir /etc/nixos/nextcloud
+  mkdir /etc/nixos/resources
+  mkdir /etc/nixos/videomeet
 
   # Prevent grep for sending error code 1 (and halting execution) when no lines are selected : https://www.unix.com/man-page/posix/1P/grep
   local IFS=$'\n' 
@@ -34,31 +37,191 @@ makeConf() {
     ./hardware-configuration.nix
     $network_import
     $NIXOS_IMPORT
+    ./files.nix
 	./mailserver/system/mailserver.nix
 	./letsencrypt/acme.nix
 	./backup/restic.nix
 	./passmgr/bitwarden.nix
 	./nginx/nginx.nix
 	./nextcloud/nextcloud.nix
+    ./resources/limits.nix
+    ./videomeet/jitsi.nix
 	./git/gitea.nix
   ];
 
   boot.cleanTmpDir = true;
-  networking.hostName = "$(hostname)";
-  networking.firewall.allowPing = true;
-  services.openssh.enable = true;
+  networking = {
+    hostName = "$(hostname)";
+    firewall = {
+      allowedTCPPorts = lib.mkForce [ 22 443 80 143 587 480 8080 8222 6667 8448 8388 8404 ];
+      allowedUDPPorts = lib.mkForce [ 22 443 80 143 587 480 8080 8222 6667 8448 8388 ];
+    };
+  };
+  time.timeZone = "Europe/Uzhgorod";
+  i18n.defaultLocale = "en_GB.UTF-8";
   users.users.root.openssh.authorizedKeys.keys = [$(while read -r line; do echo -n "
     \"$line\" "; done <<< "$keys")
   ];
+  services.openssh = {
+    enable = true;
+    passwordAuthentication = true;
+    permitRootLogin = "yes";
+    openFirewall = false;
+  };
+  programs.ssh = {
+    pubkeyAcceptedKeyTypes = [ "ssh-ed25519" ];
+    hostKeyAlgorithms = [ "ssh-ed25519" ];
+  };
+  environment.systemPackages = with pkgs; [
+    letsencrypt
+    mkpasswd
+    git
+    wget
+    curl
+    restic
+    pwgen
+    tmux
+    sudo
+    python3
+  ] ++ (with python38Packages; [
+    pip
+    flask
+    pandas
+  ]);
+  environment.variables = {
+    DOMAIN = "$DOMAIN";
+    AWS_ACCESS_KEY_ID = "$AWS_ACCESS_KEY_ID";
+    AWS_SECRET_ACCESS_KEY = "$AWS_SECRET_ACCESS_KEY";
+  };
+  system.autoUpgrade.enable = true;
+  system.autoUpgrade.allowReboot = false;
+  system.autoUpgrade.channel = https://nixos.org/channels/nixos-20.09-small;
+  nix = {
+    optimise.automatic = true;
+    gc = {
+      automatic = true;
+      options = "--delete-older-than 7d";
+    };
+  };
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_forward" = 1;
+  };
+  swapDevices = [
+    {
+      device = "/swapfile";
+      priority = 0;
+      size = 2048;
+    }
+  ];
+  security = {
+    sudo = {
+      enable = true;
+      wheelNeedsPassword = true;
+    };
+  };
 }
 EOF
   # If you rerun this later, be sure to prune the filesSystems attr
-  cat > /etc/nixos/hardware-configuration.nix << EOF
+    cat > /etc/nixos/hardware-configuration.nix << EOF
 { ... }:
 {
   imports = [ <nixpkgs/nixos/modules/profiles/qemu-guest.nix> ];
   boot.loader.grub.device = "$grubdev";
   fileSystems."/" = { device = "$rootfsdev"; fsType = "ext4"; };
+}
+EOF
+
+    cat > /etc/nixos/files.nix << EOF
+{ pkgs, ... }:
+{
+  systemd.tmpfiles.rules =
+    let
+      nextcloudDBPass = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+      irememberMyownvillagewhereiwasdrillingshit1
+      '';
+      nextcloudAdminPass = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+      irememberMyownvillagewhereiwasdrillingshit1
+      '';
+      resticPass = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+      irememberMyownvillagewhereiwasdrillingshit1
+      '';
+      apiEndpoints = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+from flask import Flask, jsonify, request
+from flask_restful import Resource, Api, reqparse
+import pandas as pd
+import ast
+import subprocess
+import os
+app = Flask(__name__)
+api = Api(app)
+@app.route("/systemVersion", methods=["GET"])
+def uname():
+    uname = subprocess.check_output(["uname", "-arm"])
+    return jsonify(uname)
+@app.route("/getDKIM", methods=["GET"])
+def getDkimKey():
+    dkim = subprocess.check_output(["cat", os.getenv("DOMAIN")+".selector.txt"])
+    return jsonify(dkim)
+@app.route("/pythonVersion", methods=["GET"])
+def getPythonVersion():
+    pythonVersion = subprocess.check_output(["python","--version"])
+    return jsonify(pythonVersion)
+@app.route("/apply", methods=["GET"])
+def rebuildSystem():
+     rebuildResult = subprocess.Popen(["nixos-rebuild","switch"])
+     rebuildResult.communicate()[0]
+     return jsonify(rebuildResult.returncode)
+@app.route("/rollback", methods=["GET"])
+def rollbackSystem():
+     rollbackResult = subprocess.Popen(["nixos-rebuild","switch","--rollback"])
+     rollbackResult.communicate()[0]
+     return jsonify(rollbackResult.returncode)
+@app.route("/upgrade", methods=["GET"])
+def upgradeSystem():
+     upgradeResult = subprocess.Popen(["nixos-rebuild","switch","--upgrade"])
+     upgradeResult.communicate()[0]
+     return jsonify(upgradeResult.returncode)
+@app.route("/createUser", methods=["GET"])
+def createUser():
+    user = subprocess.Popen(["useradd","-m",request.headers.get("X-User")])
+    user.communicate()[0]
+    return jsonify(user.returncode)
+@app.route("/deleteUser", methods=["DELETE"])
+def deleteUser():
+    user = subprocess.Popen(["userdel",request.headers.get("X-User")])
+    user.communicate()[0]
+    return jsonify(user.returncode)
+@app.route("/serviceStatus", methods=["GET"])
+def getServiceStatus():
+    imapService = subprocess.Popen(["systemctl", "status", "dovecot2.service"])
+    imapService.communicate()[0]
+    smtpService = subprocess.Popen(["systemctl", "status", "postfix.service"])
+    smtpService.communicate()[0]
+    httpService = subprocess.Popen(["systemctl", "status", "nginx.service"])
+    httpService.communicate()[0]
+    return jsonify(
+        imap=imapService.returncode,
+        smtp=smtpService.returncode,
+        http=httpService.returncode
+    )
+if __name__ == '__main__':
+    app.run()
+  '';
+  apiRequirements = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+flask
+  '';
+    in
+      [
+        "d /var/restic 0660 restic - - -"
+	"d /var/bitwarden 0777 bitwarden_rs bitwarden_rs -"
+	"d /var/api 0775 unit unit -"
+	"d /var/bitwarden/backup 0777 bitwarden_rs bitwarden_rs -"
+	"f /var/api/app.py 0775 unit unit - ${apiEndpoints}"
+	"f /var/api/requirements.txt 0664 unit unit - ${apiRequirements}"
+	"f /var/restic/restic-repo-password 0660 restic - - ${resticPass}"
+	"f /var/nextcloud-db-pass 0440 nextcloud nextcloud - ${nextcloudDBPass}"
+	"f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - ${nextcloudAdminPass}"
+      ];
 }
 EOF
 
@@ -293,7 +456,7 @@ proxy_headers_hash_bucket_size 128;
 }
 EOF
 
-cat > /etc/nixos/nextcloud/nextcloud.nix << EOF
+    cat > /etc/nixos/nextcloud/nextcloud.nix << EOF
 { pkgs, ... }:
 {
   services.nextcloud = {
@@ -380,6 +543,73 @@ EOF
 	    };
       };
     };
+  };
+}
+EOF
+
+    cat /etc/nixos/resources/limits.nix << EOF
+{ pkgs, ... }:
+{
+  systemd.services = {
+    dovecot2 = {
+      serviceConfig = {
+        cpuAccounting = true;
+	    cpuQuota = "20%";
+        memoryAccounting = true;
+        memoryMax = "256M";
+	    startLimitIntervalSec = 500;
+	    startLimitBurst = 5;
+	    blockIOWeigth = 25;
+      };
+    };
+    postfix = {
+      serviceConfig = {
+        cpuAccounting = true;
+	    cpuQuota = "20%";
+	    memoryAccounting = true;
+	    memoryMax = "256M";
+	    startLimitIntervalSec = 500;
+	    startLimitBurst = 5;
+	    blockIOWeigth = 25;
+      };
+    };
+    ocserv = {
+      serviceConfig = {
+        cpuAccounting = true;
+	    cpuQuota = "70%";
+	    memoryAccounting = true;
+	    memoryMax = "512M";
+	    startLimitIntervalSec = 500;
+	    startLimitBurst = 5;
+      };
+    };
+    nginx = {
+      serviceConfig = {
+        cpuAccounting = true;
+        cpuQuota = "70%";
+        memoryAccounting = true;
+        memoryMax = "768M";
+        startLimitIntervalSec = 500;
+        startLimitBurst = 5;
+	    blockIOWeigth = 10;
+      };	
+    };
+  };
+}
+EOF
+
+    cat /etc/nixos/videomeet/jitsi.nix << EOF
+{ pkgs, ... }:
+{
+  services.jitsi-meet = {
+    enable = true;
+    hostName = "meet.$DOMAIN";
+    nginx.enable = true;
+    interfaceConfig = {
+      SHOW_JITSI_WATERMARK = false;
+      SHOW_WATERMARK_FOR_GUESTS = false;
+    };
+      
   };
 }
 EOF
