@@ -35,9 +35,7 @@ makeConf() {
     $network_import
     $NIXOS_IMPORT
 	./mailserver/system/mailserver.nix
-	#./api/uwsgi.nix
 	./letsencrypt/acme.nix
-	./letsencrypt/certbot.nix
 	./backup/restic.nix
 	./passmgr/bitwarden.nix
 	./nginx/nginx.nix
@@ -166,28 +164,6 @@ EOF
       };
       "meet.$DOMAIN" = {
         group = "acmerecievers";
-      };
-    };
-  };
-}
-EOF
-
-    cat > /etc/nixos/letsencrypt/certbot.nix << EOF
-{ pkgs, ... }:
-{
-  systemd = {
-    timers.certbot-renew = {
-      wantedBy = [ "timers.target" ];
-      partOf = [ "certbot-renew.service" ];
-      timerConfig.OnCalendar = "monthly";
-    };
-    services.certbot-renew = {
-      path = with pkgs; [
-        letsencrypt
-      ];
-      serviceConfig = {
-        Type = "oneshot";
-	ExecStart = "\${pkgs.letsencrypt}/bin/certbot renew";
       };
     };
   };
