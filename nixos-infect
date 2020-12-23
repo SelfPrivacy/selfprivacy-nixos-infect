@@ -307,6 +307,7 @@ cat > /etc/nixos/nextcloud/nextcloud.nix << EOF
 {
   services.nextcloud = {
     enable = true;
+    package = pkgs.nextcloud20;
     hostName = "cloud.$DOMAIN";
 
     # Use HTTPS for links
