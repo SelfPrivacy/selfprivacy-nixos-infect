@@ -35,7 +35,7 @@ makeConf() {
     $network_import
     $NIXOS_IMPORT
 	./mailserver/system/mailserver.nix
-	./api/uwsgi.nix
+	#./api/uwsgi.nix
 	./letsencrypt/acme.nix
 	./letsencrypt/certbot.nix
 	./backup/restic.nix
@@ -173,7 +173,7 @@ EOF
 EOF
 
     cat > /etc/nixos/letsencrypt/certbot.nix << EOF
-'{ pkgs, ... }:
+{ pkgs, ... }:
 {
   systemd = {
     timers.certbot-renew = {
@@ -187,11 +187,11 @@ EOF
       ];
       serviceConfig = {
         Type = "oneshot";
-	ExecStart = "${pkgs.letsencrypt}/bin/certbot renew";
+	ExecStart = "\${pkgs.letsencrypt}/bin/certbot renew";
       };
     };
   };
-}'
+}
 EOF
 
     cat > /etc/nixos/backup/restic.nix << EOF
