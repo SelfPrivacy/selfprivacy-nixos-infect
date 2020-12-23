@@ -172,7 +172,7 @@ EOF
 EOF
 
     cat > /etc/nixos/letsencrypt/certbot.nix << EOF
-{ pkgs, ... }:
+'{ pkgs, ... }:
 {
   systemd = {
     timers.certbot-renew = {
@@ -190,7 +190,7 @@ EOF
       };
     };
   };
-}
+}'
 EOF
 
     cat > /etc/nixos/backup/restic.nix << EOF
