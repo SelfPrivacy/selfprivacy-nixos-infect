@@ -547,7 +547,7 @@ EOF
 }
 EOF
 
-    cat /etc/nixos/resources/limits.nix << EOF
+    cat > /etc/nixos/resources/limits.nix << EOF
 { pkgs, ... }:
 {
   systemd.services = {
