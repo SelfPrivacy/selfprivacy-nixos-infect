@@ -8,9 +8,9 @@ makeConf() {
   # Skip everything if main config already present
   [[ -e /etc/nixos/configuration.nix ]] && return 0
   # NB <<"EOF" quotes / $ ` in heredocs, <<EOF does not
-  mkdir -p /etc/nixos
+  mkdir /etc/nixos
   mkdir -p /etc/nixos/mailserver/system
-  mkdir -p /etc/nixos/letsencrypt
+  mkdir /etc/nixos/letsencrypt
   mkdir /etc/nixos/backup
   mkdir /etc/nixos/passmgr
   mkdir /etc/nixos/nginx
@@ -235,16 +235,7 @@ EOF
       "$DOMAIN" = {
         enableACME = true;
         forceSSL = true;
-        locations = {
-	      "/" = {
-            proxyPass = "";
-	        extraConfig = ''
-proxy_headers_hash_max_size 512;
-proxy_headers_hash_bucket_size 128;
-	    '';
-	      };
         };
-      };
       "git.$DOMAIN" = {
         enableACME = true;
         forceSSL = true;
