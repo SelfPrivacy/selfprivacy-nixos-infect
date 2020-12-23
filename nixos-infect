@@ -136,24 +136,24 @@ EOF
 {
   systemd.tmpfiles.rules =
     let
-      nextcloudDBPass = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+      nextcloudDBPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       irememberMyownvillagewhereiwasdrillingshit1
       '';
-      nextcloudAdminPass = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+      nextcloudAdminPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       irememberMyownvillagewhereiwasdrillingshit1
       '';
-      resticPass = builtins.replaceStrings [ "\n" "\"" "\\" ] [ "\\n" "\\\"" "\\\\" ] ''
+      resticPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       irememberMyownvillagewhereiwasdrillingshit1
       '';
     in
       [
         "d /var/restic 0660 restic - - -"
-	    "d /var/bitwarden 0777 bitwarden_rs bitwarden_rs -"
-	    "d /var/api 0775 unit unit -"
-	    "d /var/bitwarden/backup 0777 bitwarden_rs bitwarden_rs -"
-	    "f /var/restic/restic-repo-password 0660 restic - - \${resticPass}"
-	    "f /var/nextcloud-db-pass 0440 nextcloud nextcloud - \${nextcloudDBPass}"
-	    "f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - \${nextcloudAdminPass}"
+        "d /var/bitwarden 0777 bitwarden_rs bitwarden_rs -"
+        "d /var/api 0775 unit unit -"
+        "d /var/bitwarden/backup 0777 bitwarden_rs bitwarden_rs -"
+        "f /var/restic/restic-repo-password 0660 restic - - \${resticPass}"
+        "f /var/nextcloud-db-pass 0440 nextcloud nextcloud - \${nextcloudDBPass}"
+        "f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - \${nextcloudAdminPass}"
       ];
 }
 EOF
