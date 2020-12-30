@@ -137,13 +137,13 @@ EOF
   systemd.tmpfiles.rules =
     let
       nextcloudDBPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
-      irememberMyownvillagewhereiwasdrillingshit1
+      $PASSWORD
       '';
       nextcloudAdminPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
-      irememberMyownvillagewhereiwasdrillingshit1
+      $PASSWORD
       '';
       resticPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
-      irememberMyownvillagewhereiwasdrillingshit1
+      $PASSWORD
       '';
     in
       [
@@ -184,7 +184,7 @@ EOF
     # mkpasswd -m sha-512 "super secret password"
     loginAccounts = {
 	"$USER@$DOMAIN" = {
-	    hashedPassword = "$PASSWORD";
+	    hashedPassword = "$HASHED_PASSWORD";
 
             #aliases = [
             #    "mail@example.com"
@@ -272,7 +272,7 @@ EOF
   services.restic.backups = {
     options = {
       passwordFile = "/etc/restic/resticPasswd";
-      repository = "s3:s3.anazonaws.com/eec1ya-backup";
+      repository = "s3:s3.anazonaws.com/$S3_BUCKET";
       initialize = true;
       paths = [
         "/var/dkim"
@@ -291,7 +291,7 @@ EOF
     isNormalUser = false;
   };
   environment.etc."restic/resticPasswd".text = ''
-sadihvkrgjkdf
+$PASSWORD
   '';
   environment.etc."restic/s3Passwd".text = ''
 AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
