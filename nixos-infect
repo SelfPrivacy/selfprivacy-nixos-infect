@@ -20,6 +20,7 @@ makeConf() {
   mkdir /etc/nixos/nextcloud
   mkdir /etc/nixos/resources
   mkdir /etc/nixos/videomeet
+  mkdir /etc/nxos/openconnect
 
   # Prevent grep for sending error code 1 (and halting execution) when no lines are selected : https://www.unix.com/man-page/posix/1P/grep
   local IFS=$'\n' 
@@ -148,6 +149,9 @@ EOF
       resticPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       $PASSWORD
       '';
+      shadowsocksPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
+      $PASSWORD
+      '';
       domain = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       $DOMAIN
       '';
@@ -161,6 +165,7 @@ EOF
         "f /var/restic/restic-repo-password 0660 restic - - \${resticPass}"
         "f /var/nextcloud-db-pass 0440 nextcloud nextcloud - \${nextcloudDBPass}"
         "f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - \${nextcloudAdminPass}"
+        "f /var/shadowsocks-password 0440 nobody nobody - \${shadowsocksPass}"
       ];
 }
 EOF
@@ -643,6 +648,23 @@ in
         Restart = "always";
         RestartSec = "5";
       };
+    };
+  };
+}
+EOF
+
+cat > /etc/nixos/openconnect/shadowsocks.nix << EOF
+{ pkgs, ...}:
+{
+  services = {
+    shadowsocks = {
+      enable = true;
+      localAddress = [ "[::0]" "0.0.0.0" ];
+      port = 8388;
+      passwordFile = "/var/shadowsocks-password";
+      mode = "tcp_and_udp";
+      fastOpen = true;
+      encryptionMethod = "chacha20-ietf-poly1305";
     };
   };
 }
