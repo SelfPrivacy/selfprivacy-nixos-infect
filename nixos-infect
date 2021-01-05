@@ -882,6 +882,7 @@ infect() {
 
 [ "$PROVIDER" = "digitalocean" ] && doNetConf=y # digitalocean requires detailed network config to be generated
 
+apt update
 apt install -y git
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
