@@ -341,10 +341,6 @@ EOF
     recommendedTlsSettings = true;
 
     virtualHosts = {
-      "$DOMAIN" = {
-        enableACME = true;
-        forceSSL = true;
-        };
       "git.$DOMAIN" = {
         enableACME = true;
         forceSSL = true;
