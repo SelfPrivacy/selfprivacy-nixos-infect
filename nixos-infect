@@ -43,6 +43,7 @@ makeConf() {
 	./mailserver/system/mailserver.nix
     ./openconnect/shadowsocks.nix
     ./api/api.nix
+    ./api/api-service.nix
 	./letsencrypt/acme.nix
 	./backup/restic.nix
 	./passmgr/bitwarden.nix
