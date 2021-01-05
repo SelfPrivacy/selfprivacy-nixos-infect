@@ -11,6 +11,7 @@ makeConf() {
   mkdir /etc/nixos
   mkdir -p /etc/nixos/mailserver/system
   mkdir /etc/nixos/mailserver/userdata
+  mkdir /etc/nixos/api
   mkdir /etc/nixos/letsencrypt
   mkdir /etc/nixos/backup
   mkdir /etc/nixos/passmgr
@@ -39,6 +40,8 @@ makeConf() {
     $NIXOS_IMPORT
     ./files.nix
 	./mailserver/system/mailserver.nix
+    ./openconnect/shadowsocks.nix
+    ./api/api.nix
 	./letsencrypt/acme.nix
 	./backup/restic.nix
 	./passmgr/bitwarden.nix
@@ -53,8 +56,8 @@ makeConf() {
   networking = {
     hostName = "$(hostname)";
     firewall = {
-      allowedTCPPorts = lib.mkForce [ 22 443 80 143 587 480 8080 8222 6667 8448 8388 8404 ];
-      allowedUDPPorts = lib.mkForce [ 22 443 80 143 587 480 8080 8222 6667 8448 8388 ];
+      allowedTCPPorts = lib.mkForce [ 22 443 80 143 587 8388 ];
+      allowedUDPPorts = lib.mkForce [ 22 443 80 143 587 8388 ];
     };
   };
   time.timeZone = "Europe/Uzhgorod";
@@ -145,12 +148,16 @@ EOF
       resticPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       $PASSWORD
       '';
+      domain = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
+      $DOMAIN
+      '';
     in
       [
         "d /var/restic 0660 restic - - -"
         "d /var/bitwarden 0777 bitwarden_rs bitwarden_rs -"
         "d /var/api 0775 unit unit -"
         "d /var/bitwarden/backup 0777 bitwarden_rs bitwarden_rs -"
+        "f /var/domain 0444 selfprivacy-api selfprivacy-api - \${domain}"
         "f /var/restic/restic-repo-password 0660 restic - - \${resticPass}"
         "f /var/nextcloud-db-pass 0440 nextcloud nextcloud - \${nextcloudDBPass}"
         "f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - \${nextcloudAdminPass}"
@@ -237,7 +244,7 @@ EOF
 { pkgs, ... }:
 {
   users.groups.acmerecievers = {
-    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "bitwarden_rs" "nextcloud" "uwsgi" ];
+    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "bitwarden_rs" "nextcloud" ];
   };
   security.acme = {
     acceptTerms = true;
@@ -376,7 +383,7 @@ proxy_headers_hash_bucket_size 128;
 	forceSSL = true;
         locations = {
           "/" = {
-            proxyPass = "http://127.0.0.1:1256";
+            proxyPass = "http://127.0.0.1:5050";
 	    extraConfig = ''
 proxy_headers_hash_max_size 512;
 proxy_headers_hash_bucket_size 128;
@@ -543,6 +550,100 @@ EOF
       SHOW_WATERMARK_FOR_GUESTS = false;
     };
       
+  };
+}
+EOF
+
+cat > /etc/nixos/api/api.nix << EOF
+{ pkgs, ... }:
+{
+  services.selfprivacy-api = {
+    enable = true;
+  };
+
+  users.users."selfprivacy-api" = {
+    isNormalUser = false;
+    extraGroups = [ "opendkim" ];
+  };
+  users.groups."selfprivacy-api" = {
+    members = [ "selfprivacy-api" ];
+  };
+}
+EOF
+
+cat > /etc/nixos/api/api-package.nix << EOF
+{ nixpkgs ? import <nixpkgs> {}, pythonPkgs ? nixpkgs.pkgs.python37Packages }:
+
+let
+  inherit (nixpkgs) pkgs;
+  inherit pythonPkgs;
+
+  selfprivacy-api = { buildPythonPackage, flask, flask-restful, pandas }:
+    buildPythonPackage rec {
+      pname = "selfprivacy-api";
+      version = "1.0";
+      src = builtins.fetchGit {
+        url = "https://git.selfprivacy.org/ilchub/selfprivacy-rest-api.git";
+        rev = "d7a6b3ca12d936165a4fc1c6265a2dfc3fd6229e";
+      };
+      propagatedBuildInputs = [ flask flask-restful pandas ];
+      meta = {
+        description = ''
+          SelfPrivacy Server Management API
+        '';
+      };
+    };
+  drv = pythonPkgs.callPackage selfprivacy-api {};
+in
+  if pkgs.lib.inNixShell then drv.env else drv
+EOF
+
+cat > /etc/nixos/api/api-service.nix << EOF
+{ config, lib, pkgs, ... }:
+
+with lib;
+
+let
+  selfprivacy-api = pkgs.callPackage ./api-package.nix {};
+  cfg = config.services.selfprivacy-api;
+  directionArg = if cfg.direction == ""
+    then ""
+    else "--direction=\${cfg.direction}";
+in 
+{
+  options.services.selfprivacy-api = {
+    enable = mkOption {
+      default = false;
+      type = types.bool;
+      description = ''
+        Enable SelfPrivacy API service
+      '';
+    };
+  };
+  config = lib.mkIf cfg.enable {
+
+    systemd.services.selfprivacy-api = {
+      description = "API Server used to control system from the mobile application";
+      environment = {
+        PYTHONUNBUFFERED = "1";
+      };
+      path = [ "/var/" "/var/dkim/" ];
+      after = [ "network-online.target" ];
+      wantedBy = [ "network-online.target" ];
+      serviceConfig = {
+        User = "root";
+        PrivateDevices = "true";
+        ProtectKernelTunables = "true";
+        ProtectKernelModules = "true";
+        LockPersonality = "true";
+        RestrictRealtime = "true";
+        SystemCallFilter = "@system-service @network-io @signal";
+        SystemCallErrorNumber = "EPERM";
+        ExecStart = "\${selfprivacy-api}/bin/main.py";
+        Restart = "always";
+        RestartSec = "5";
+      };
+    };
   };
 }
 EOF
