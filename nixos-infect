@@ -160,7 +160,6 @@ EOF
       [
         "d /var/restic 0660 restic - - -"
         "d /var/bitwarden 0777 bitwarden_rs bitwarden_rs -"
-        "d /var/api 0775 unit unit -"
         "d /var/bitwarden/backup 0777 bitwarden_rs bitwarden_rs -"
         "f /var/domain 0444 selfprivacy-api selfprivacy-api - \${domain}"
         "f /var/restic/restic-repo-password 0660 restic - - \${resticPass}"
