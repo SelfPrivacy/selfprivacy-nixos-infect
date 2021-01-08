@@ -323,7 +323,6 @@ EOF
       domain = "https://password.$DOMAIN/";
       signupsAllowed = true;
       rocketPort = 8222;
-      rocketLog = "warning";
     };
   };
 }
