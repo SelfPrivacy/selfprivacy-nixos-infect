@@ -666,7 +666,7 @@ cat > /etc/nixos/openconnect/shadowsocks.nix << EOF
 }
 EOF
 
-  [[ -n "$doNetConf" ]] && makeNetworkingConf
+  [[ -n "$doNetConf" ]] && makeNetworkingConf || true
 }
 
 makeNetworkingConf() {
