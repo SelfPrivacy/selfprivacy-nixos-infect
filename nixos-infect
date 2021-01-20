@@ -257,21 +257,27 @@ EOF
     certs = {
       "$DOMAIN" = {
         group = "acmerecievers";
+        webroot = "/var/lib/acme/acme-challenge";
       };
       "git.$DOMAIN" = {
         group = "acmerecievers";
+        webroot = "/var/lib/acme/acme-challenge";
       };
       "cloud.$DOMAIN" = {
         group = "acmerecievers";
+        webroot = "/var/lib/acme/acme-challenge";
       };
       "password.$DOMAIN" = {
         group = "acmerecievers";
+        webroot = "/var/lib/acme/acme-challenge";
       };
       "api.$DOMAIN" = {
         group = "acmerecievers";
+        webroot = "/var/lib/acme/acme-challenge";
       };
       "meet.$DOMAIN" = {
         group = "acmerecievers";
+        webroot = "/var/lib/acme/acme-challenge";
       };
     };
   };
