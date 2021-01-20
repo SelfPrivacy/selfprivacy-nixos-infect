@@ -189,7 +189,7 @@ EOF
   };
   mailserver = {
     enable = true;
-    fqdn = "$DOMAIM";
+    fqdn = "$DOMAIN";
     domains = [ "$DOMAIN" ];
 
     # A list of all login accounts. To create the password hashes, use
