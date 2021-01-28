@@ -59,7 +59,7 @@ makeConf() {
     hostName = "$(hostname)";
     firewall = {
       allowedTCPPorts = lib.mkForce [ 22 25 80 143 443 587 8443 ];
-      allowedUDPPorts = lib.mkForce [ 443 ];
+      allowedUDPPorts = lib.mkForce [ 8443 ];
     };
   };
   time.timeZone = "Europe/Uzhgorod";
@@ -355,7 +355,6 @@ EOF
         forceSSL = true;
       };
       "vpn.$DOMAIN" = {
-        listen = [{ addr = "0.0.0.0"; port = 8443; ssl = true; }];
         enableACME = true;
 	    forceSSL = true;
       };
@@ -685,8 +684,8 @@ socket-file = /var/run/ocserv-socket
 
 auth = "pam"
 
-tcp-port = 443
-udp-port = 443
+tcp-port = 8443
+udp-port = 8443
 
 server-cert = /var/lib/acme/vpn.$DOMAIN/fullchain.pem
 server-key = /var/lib/acme/vpn.$DOMAIN/key.pem
