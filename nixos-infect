@@ -124,6 +124,13 @@ makeConf() {
       wheelNeedsPassword = true;
     };
   };
+  users.mutableUsers = false;
+  users.users = {
+    "$USER" = {
+      isNormalUser = true;
+      hashedPassword = "$HASHED_PASSWORD";
+    };
+  };
 }
 EOF
   # If you rerun this later, be sure to prune the filesSystems attr
