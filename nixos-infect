@@ -78,15 +78,9 @@ makeConf() {
     hostKeyAlgorithms = [ "ssh-ed25519" ];
   };
   environment.systemPackages = with pkgs; [
-    letsencrypt
-    mkpasswd
     git
     wget
     curl
-    restic
-    pwgen
-    tmux
-    sudo
     python3
   ] ++ (with python38Packages; [
     pip
@@ -163,6 +157,12 @@ EOF
       domain = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       $DOMAIN
       '';
+      cloudflareCredentials = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
+      # Cloudflare API token used by Certbot
+      CF_API_KEY=$CF_TOKEN
+      CLOUDFLARE_DNS_API_TOKEN=$CF_TOKEN
+      CLOUDFLARE_ZONE_API_TOKEN=$CF_TOKEN
+      '';
     in
       [
         "d /var/restic 0660 restic - - -"
@@ -172,7 +172,7 @@ EOF
         "f /var/restic/restic-repo-password 0660 restic - - \${resticPass}"
         "f /var/nextcloud-db-pass 0440 nextcloud nextcloud - \${nextcloudDBPass}"
         "f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - \${nextcloudAdminPass}"
-        "f /var/shadowsocks-password 0440 nobody nobody - \${shadowsocksPass}"
+        "f /var/cloudflareCredentials.ini 0440 nginx acmerecievers - \${cloudflareCredentials}"
       ];
 }
 EOF
@@ -235,7 +235,9 @@ EOF
 
     # Use Let's Encrypt certificates. Note that this needs to set up a stripped
     # down nginx and opens port 80.
-    certificateScheme = 3;
+    certificateScheme = 1;
+    certificateFile = "/var/lib/acme/$DOMAIN/fullchain.pem";
+    keyFile = "/var/lib/acme/$DOMAIN/key.pem";
 
     # Enable IMAP and POP3
     enableImap = true;
@@ -256,39 +258,18 @@ EOF
 { pkgs, ... }:
 {
   users.groups.acmerecievers = {
-    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "bitwarden_rs" "nextcloud" ];
+    members = [ "nginx" "dovecot2" "postfix" "virtualMail" "ocserv" ];
   };
   security.acme = {
     acceptTerms = true;
     email = "$USER@$DOMAIN";
     certs = {
       "$DOMAIN" = {
+        domain = "*.$DOMAIN";
+        extraDomainNames = [ "$DOMAIN" ];
         group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
-      };
-      "vpn.$DOMAIN" = {
-        group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
-      };
-      "git.$DOMAIN" = {
-        group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
-      };
-      "cloud.$DOMAIN" = {
-        group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
-      };
-      "password.$DOMAIN" = {
-        group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
-      };
-      "api.$DOMAIN" = {
-        group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
-      };
-      "meet.$DOMAIN" = {
-        group = "acmerecievers";
-        webroot = "/var/lib/acme/acme-challenge";
+        dnsProvider = "cloudflare";
+        credentialsFile = "/var/cloudflareCredentials.ini";
       };
     };
   };
@@ -358,15 +339,18 @@ EOF
     virtualHosts = {
 
       "$DOMAIN" = {
-        enableACME = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
         forceSSL = true;
       };
       "vpn.$DOMAIN" = {
-        enableACME = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
 	    forceSSL = true;
       };
       "git.$DOMAIN" = {
-        enableACME = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
         forceSSL = true;
         locations = {
           "/" = {
@@ -379,8 +363,9 @@ proxy_headers_hash_bucket_size 128;
         };
       };
       "cloud.$DOMAIN" = {
-        enableACME = true;
-	forceSSL = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
+	    forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:80/";
@@ -392,7 +377,8 @@ proxy_headers_hash_bucket_size 128;
 	    };
       };
       "password.$DOMAIN" = {
-        enableACME = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
 	    forceSSL = true;
         locations = {
           "/" = {
@@ -405,8 +391,9 @@ proxy_headers_hash_bucket_size 128;
 	};
       };
       "api.$DOMAIN" = {
-        enableACME = true;
-	forceSSL = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
+        forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:5050";
@@ -694,8 +681,8 @@ auth = "pam"
 tcp-port = 8443
 udp-port = 8443
 
-server-cert = /var/lib/acme/vpn.$DOMAIN/fullchain.pem
-server-key = /var/lib/acme/vpn.$DOMAIN/key.pem
+server-cert = /var/lib/acme/$DOMAIN/fullchain.pem
+server-key = /var/lib/acme/$DOMAIN/key.pem
 
 compression = true
 
