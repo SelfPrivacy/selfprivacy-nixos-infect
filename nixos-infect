@@ -120,7 +120,7 @@ makeConf() {
   };
   users.mutableUsers = false;
   users.users = {
-    "$USER" = {
+    "$LUSER" = {
       isNormalUser = true;
       hashedPassword = "$HASHED_PASSWORD";
     };
@@ -202,7 +202,7 @@ EOF
     # A list of all login accounts. To create the password hashes, use
     # mkpasswd -m sha-512 "super secret password"
     loginAccounts = {
-	"$USER@$DOMAIN" = {
+	"$LUSER@$DOMAIN" = {
 	    hashedPassword = "$HASHED_PASSWORD";
 
             #aliases = [
@@ -230,7 +230,7 @@ EOF
     # loginAccounts addresses.
     extraVirtualAliases = {
         # address = forward address;
-	 "admin@$DOMAIN" = "$USER@$DOMAIN";
+	 "admin@$DOMAIN" = "$LUSER@$DOMAIN";
     };
 
     # Use Let's Encrypt certificates. Note that this needs to set up a stripped
@@ -262,7 +262,7 @@ EOF
   };
   security.acme = {
     acceptTerms = true;
-    email = "$USER@$DOMAIN";
+    email = "$LUSER@$DOMAIN";
     certs = {
       "$DOMAIN" = {
         domain = "*.$DOMAIN";
