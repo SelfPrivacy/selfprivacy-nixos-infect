@@ -12,6 +12,7 @@ makeConf() {
   mkdir -p /etc/nixos/mailserver/system
   mkdir /etc/nixos/mailserver/userdata
   mkdir /etc/nixos/api
+  mkdir /etc/nixos/social
   mkdir /etc/nixos/letsencrypt
   mkdir /etc/nixos/backup
   mkdir /etc/nixos/passmgr
@@ -44,6 +45,8 @@ makeConf() {
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-service.nix
+    ./social/pleroma-module.nix
+    ./social/pleroma.nix
 	./letsencrypt/acme.nix
 	./backup/restic.nix
 	./passmgr/bitwarden.nix
@@ -79,14 +82,7 @@ makeConf() {
   };
   environment.systemPackages = with pkgs; [
     git
-    wget
-    curl
-    python3
-  ] ++ (with python38Packages; [
-    pip
-    flask
-    pandas
-  ]);
+  ];
   environment.variables = {
     DOMAIN = "$DOMAIN";
     AWS_ACCESS_KEY_ID = "$AWS_ACCESS_KEY_ID";
@@ -115,7 +111,6 @@ makeConf() {
   security = {
     sudo = {
       enable = true;
-      wheelNeedsPassword = true;
     };
   };
   users.mutableUsers = false;
@@ -151,14 +146,10 @@ EOF
       resticPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       $PASSWORD
       '';
-      shadowsocksPass = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
-      $PASSWORD
-      '';
       domain = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
       $DOMAIN
       '';
       cloudflareCredentials = builtins.replaceStrings [ "\n" "\"" "\\\" ] [ "\\\n" "\\\\\"" "\\\\\\\\" ] ''
-      # Cloudflare API token used by Certbot
       CF_API_KEY=$CF_TOKEN
       CLOUDFLARE_DNS_API_TOKEN=$CF_TOKEN
       CLOUDFLARE_ZONE_API_TOKEN=$CF_TOKEN
@@ -356,10 +347,6 @@ EOF
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:3000";
-	    extraConfig = ''
-proxy_headers_hash_max_size 512;
-proxy_headers_hash_bucket_size 128;
-            '';
 	      };
         };
       };
@@ -370,10 +357,6 @@ proxy_headers_hash_bucket_size 128;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:80/";
-	    extraConfig = ''
-proxy_headers_hash_max_size 512;
-proxy_headers_hash_bucket_size 128;
-	    '';
 	      };
 	    };
       };
@@ -384,12 +367,8 @@ proxy_headers_hash_bucket_size 128;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:8222";
-	    extraConfig = ''
-proxy_headers_hash_max_size 512;
-proxy_headers_hash_bucket_size 128;
-	    '';
-	  };
-	};
+	      };
+	    };
       };
       "api.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
@@ -398,12 +377,22 @@ proxy_headers_hash_bucket_size 128;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:5050";
-	    extraConfig = ''
-proxy_headers_hash_max_size 512;
-proxy_headers_hash_bucket_size 128;
-            '';
 	      };
 	    };
+      };
+      "social.$DOMAIN" = {
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
+        root = "/var/www/social.$DOMAIN";
+        forceSSL = true;
+        locations = {
+          "/" = {
+            proxyPass = "http://127.0.0.1:4000";
+          };
+        };
+        extraConfig = ''
+          client_max_body_size 1024m;
+        '';
       };
     };
   };
@@ -710,6 +699,299 @@ route = default
     '';
   };
 }
+EOF
+
+cat > /etc/nixos/social/pleroma-package.nix << EOF
+{ lib
+, stdenv
+, autoPatchelfHook
+, fetchurl
+, file
+, makeWrapper
+, ncurses
+, nixosTests
+, openssl
+, unzip
+, zlib
+}:
+stdenv.mkDerivation {
+  pname = "pleroma-otp";
+  version = "2.2.2";
+
+  # To find the latest binary release stable link, have a look at
+  # the CI pipeline for the latest commit of the stable branch
+  # https://git.pleroma.social/pleroma/pleroma/-/tree/stable
+  src = {
+    aarch64-linux = fetchurl {
+      url = "https://git.pleroma.social/pleroma/pleroma/-/jobs/175288/artifacts/download";
+      sha256 = "107kp5zqwq1lixk1cwkx4v7zpm0h248xzlm152aj36ghb43j2snw";
+    };
+    x86_64-linux = fetchurl {
+      url = "https://git.pleroma.social/pleroma/pleroma/-/jobs/175284/artifacts/download";
+      sha256 = "1c6l04gga9iigm249ywwcrjg6wzy8iiid652mws3j9dnl71w2sim";
+    };
+  }."\${stdenv.hostPlatform.system}";
+
+  nativeBuildInputs = [ unzip ];
+
+  buildInputs = [
+    autoPatchelfHook
+    file
+    makeWrapper
+    ncurses
+    openssl
+    zlib
+  ];
+
+  # mkDerivation fails to detect the zip nature of $src due to the
+  # missing .zip extension.
+  # Let's unpack the archive explicitely.
+  unpackCmd = "unzip \$curSrc";
+
+  installPhase = ''
+    mkdir \$out
+    cp -r * \$out'';
+
+  # Pleroma is using the project's root path (here the store path)
+  # as its TMPDIR.
+  # Patching it to move the tmp dir to the actual tmpdir
+  postFixup = ''
+    wrapProgram \$out/bin/pleroma \
+      --set-default RELEASE_TMP "/tmp"
+    wrapProgram \$out/bin/pleroma_ctl \
+      --set-default RELEASE_TMP "/tmp"'';
+
+  passthru.tests = {
+    pleroma = nixosTests.pleroma;
+  };
+
+  meta = with lib; {
+    description = "ActivityPub microblogging server";
+    homepage = https://git.pleroma.social/pleroma/pleroma;
+    license = licenses.agpl3;
+    maintainers = with maintainers; [ ninjatrappeur ];
+    platforms = [ "x86_64-linux" "aarch64-linux" ];
+  };
+}
+EOF
+
+cat > /etc/nixos/social/pleroma-package.nix << EOF
+{ config, options, lib, pkgs, stdenv, ... }:
+let
+  cfg = config.services.pleroma;
+in {
+  options = {
+    services.pleroma = with lib; {
+      enable = mkEnableOption "pleroma";
+
+      package = mkOption {
+        type = types.package;
+        default = pkgs.pleroma-otp;
+        description = "Pleroma package to use.";
+      };
+
+      user = mkOption {
+        type = types.str;
+        default = "pleroma";
+        description = "User account under which pleroma runs.";
+      };
+
+      group = mkOption {
+        type = types.str;
+        default = "pleroma";
+        description = "Group account under which pleroma runs.";
+      };
+
+      stateDir = mkOption {
+        type = types.str;
+        default = "/var/lib/pleroma";
+        readOnly = true;
+        description = "Directory where the pleroma service will save the uploads and static files.";
+      };
+
+      configs = mkOption {
+        type = with types; listOf str;
+        description = ''
+          Pleroma public configuration.
+          This list gets appended from left to
+          right into /etc/pleroma/config.exs. Elixir evaluates its
+          configuration imperatively, meaning you can override a
+          setting by appending a new str to this NixOS option list.
+          <emphasis>DO NOT STORE ANY PLEROMA SECRET
+          HERE</emphasis>, use
+          <link linkend="opt-services.pleroma.secretConfigFile">services.pleroma.secretConfigFile</link>
+          instead.
+          This setting is going to be stored in a file part of
+          the Nix store. The Nix store being world-readable, it's not
+          the right place to store any secret
+          Have a look to Pleroma section in the NixOS manual for more
+          informations.
+          '';
+      };
+
+      secretConfigFile = mkOption {
+        type = types.str;
+        default = "/var/lib/pleroma/secrets.exs";
+        description = ''
+          Path to the file containing your secret pleroma configuration.
+          <emphasis>DO NOT POINT THIS OPTION TO THE NIX
+          STORE</emphasis>, the store being world-readable, it'll
+          compromise all your secrets.
+        '';
+      };
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    users = {
+      users."\${cfg.user}" = {
+        description = "Pleroma user";
+        home = cfg.stateDir;
+        extraGroups = [ cfg.group ];
+      };
+      groups."\${cfg.group}" = {};
+    };
+
+    environment.systemPackages = [ cfg.package ];
+
+    environment.etc."/pleroma/config.exs".text = ''
+      \${lib.concatMapStrings (x: "\${x}") cfg.configs}
+      # The lau/tzdata library is trying to download the latest
+      # timezone database in the OTP priv directory by default.
+      # This directory being in the store, it's read-only.
+      # Setting that up to a more appropriate location.
+      config :tzdata, :data_dir, "/var/lib/pleroma/elixir_tzdata_data"
+      import_config "\${cfg.secretConfigFile}"
+    '';
+
+    systemd.services.pleroma = {
+      description = "Pleroma social network";
+      after = [ "network-online.target" "postgresql.service" ];
+      wantedBy = [ "multi-user.target" ];
+      restartTriggers = [ config.environment.etc."/pleroma/config.exs".source ];
+      serviceConfig = {
+        User = cfg.user;
+        Group = cfg.group;
+        Type = "exec";
+        WorkingDirectory = "~";
+        StateDirectory = "pleroma pleroma/static pleroma/uploads";
+        StateDirectoryMode = "700";
+
+        # Checking the conf file is there then running the database
+        # migration before each service start, just in case there are
+        # some pending ones.
+        #
+        # It's sub-optimal as we'll always run this, even if pleroma
+        # has not been updated. But the no-op process is pretty fast.
+        # Better be safe than sorry migration-wise.
+        ExecStartPre =
+          let preScript = pkgs.writers.writeBashBin "pleromaStartPre"
+            "\${cfg.package}/bin/pleroma_ctl migrate";
+          in "\${preScript}/bin/pleromaStartPre";
+
+        ExecStart = "\${cfg.package}/bin/pleroma start";
+        ExecStop = "\${cfg.package}/bin/pleroma stop";
+        ExecReload = "\${pkgs.coreutils}/bin/kill -HUP \$MAINPID";
+
+        # Systemd sandboxing directives.
+        # Taken from the upstream contrib systemd service at
+        # pleroma/installation/pleroma.service
+        PrivateTmp = true;
+        ProtectHome = true;
+        ProtectSystem = "full";
+        PrivateDevices = false;
+        NoNewPrivileges = true;
+        CapabilityBoundingSet = "~CAP_SYS_ADMIN";
+      };
+    };
+
+  };
+  meta.maintainers = with lib.maintainers; [ ninjatrappeur ];
+}
+EOF
+
+cat > /etc/nixos/social/pleroma-package.nix << EOF
+{ pkgs, ... }:
+{
+  nixpkgs.overlays = [(self: super: {
+    pleroma-otp = self.callPackage ./pleroma-package.nix {};
+  })];
+  services = {
+    pleroma = {
+      enable = true;
+      user = "pleroma";
+      group = "pleroma";
+      configs = [
+      (builtins.readFile ./config.exs)
+      ];
+    };
+    postgresql = {
+      enable = true;
+      package = pkgs.postgresql_12;
+      initialScript = "/etc/setup.psql";
+    };
+  };
+  environment.etc."pleroma_setup.psql".text = ''
+CREATE USER pleroma WITH ENCRYPTED PASSWORD '$DB_PASSWORD';
+CREATE DATABASE pleroma OWNER pleroma;
+\\c pleroma;
+--Extensions made by ecto.migrate that need superuser access
+CREATE EXTENSION IF NOT EXISTS citext;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+  '';
+  users.users.pleroma = {
+    extraGroups = [ "postgres" ];
+  };
+}
+EOF
+
+cat > /etc/nixos/social/config.exs << EOF
+import Config
+
+config :pleroma, Pleroma.Web.Endpoint,
+   url: [host: "social.$DOMAIN", scheme: "https", port: 443],
+   http: [ip: {127, 0, 0, 1}, port: 4000],
+   #secret_key_base: "",
+   #signing_salt: ""
+
+config :pleroma, :instance,
+  name: "social.$DOMAIN",
+  email: "$LUSER@$DOMAIN",
+  notify_email: "$LUSER@$DOMAIN",
+  limit: 5000,
+  upload_limit: 1073741824,
+  registrations_open: true
+
+config :pleroma, :media_proxy,
+  enabled: false,
+  redirect_on_failure: true
+  #base_url: "https://cache.pleroma.social"
+
+config :pleroma, Pleroma.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  username: "pleroma",
+  password: "$DB_PASSWORD",
+  database: "pleroma",
+  hostname: "localhost",
+  pool_size: 10
+
+config :web_push_encryption, :vapid_details,
+  #subject: "",
+  #public_key: "",
+  #private_key: ""
+
+config :pleroma, :database, rum_enabled: false
+config :pleroma, :instance, static_dir: "/var/lib/pleroma/static"
+config :pleroma, Pleroma.Uploaders.Local, uploads: "/var/lib/pleroma/uploads"
+
+config :pleroma, :http_security,
+  sts: true
+
+#config :joken, default_signer: ""
+
+config :pleroma, configurable_from_database: false
+
 EOF
 
   [[ -n "$doNetConf" ]] && makeNetworkingConf || true
