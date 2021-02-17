@@ -16,7 +16,7 @@ makeConf() {
   mkdir /etc/nixos/letsencrypt
   mkdir /etc/nixos/backup
   mkdir /etc/nixos/passmgr
-  mkdir /etc/nixos/nginx
+  mkdir /etc/nixos/webserver
   mkdir /etc/nixos/git
   mkdir /etc/nixos/nextcloud
   mkdir /etc/nixos/resources
@@ -41,20 +41,21 @@ makeConf() {
     $network_import
     $NIXOS_IMPORT
     ./files.nix
-	./mailserver/system/mailserver.nix
+	  ./mailserver/system/mailserver.nix
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-service.nix
     ./social/pleroma-module.nix
     ./social/pleroma.nix
-	./letsencrypt/acme.nix
-	./backup/restic.nix
-	./passmgr/bitwarden.nix
-	./nginx/nginx.nix
-	./nextcloud/nextcloud.nix
+	  ./letsencrypt/acme.nix
+	  ./backup/restic.nix
+	  ./passmgr/bitwarden.nix
+	  ./webserver/nginx.nix
+    ./webserver/memcached.nix
+	  ./nextcloud/nextcloud.nix
     ./resources/limits.nix
     ./videomeet/jitsi.nix
-	./git/gitea.nix
+	  ./git/gitea.nix
   ];
 
   boot.cleanTmpDir = true;
@@ -195,39 +196,24 @@ EOF
     # A list of all login accounts. To create the password hashes, use
     # mkpasswd -m sha-512 "super secret password"
     loginAccounts = {
-	"$LUSER@$DOMAIN" = {
-	    hashedPassword = "$HASHED_PASSWORD";
-
-            #aliases = [
-            #    "mail@example.com"
-            #];
-
-            # Make this user the catchAll address for domains blah.com and
-            # example2.com
-            catchAll = [
-		"$DOMAIN"
-            ];
-	    sieveScript = ''
+	    "$LUSER@$DOMAIN" = {
+	      hashedPassword = "$HASHED_PASSWORD";
+        catchAll = [ "$DOMAIN" ];
+	      sieveScript = ''
 	        require ["fileinto", "mailbox"];
-		if header :contains "Chat-Version" "1.0"
-		{	
-    		  fileinto :create "DeltaChat";
-		  stop;
-		}
-	    '';
-        };
-        
+		      if header :contains "Chat-Version" "1.0"
+		      {	
+    		    fileinto :create "DeltaChat";
+		        stop;
+		      }
+	      '';
+      };
     };
 
-    # Extra virtual aliases. These are email addresses that are forwarded to
-    # loginAccounts addresses.
     extraVirtualAliases = {
-        # address = forward address;
-	 "admin@$DOMAIN" = "$LUSER@$DOMAIN";
+      "admin@$DOMAIN" = "$LUSER@$DOMAIN";
     };
 
-    # Use Let's Encrypt certificates. Note that this needs to set up a stripped
-    # down nginx and opens port 80.
     certificateScheme = 1;
     certificateFile = "/var/lib/acme/$DOMAIN/fullchain.pem";
     keyFile = "/var/lib/acme/$DOMAIN/key.pem";
@@ -319,7 +305,7 @@ EOF
 }
 EOF
 
-    cat > /etc/nixos/nginx/nginx.nix << EOF
+    cat > /etc/nixos/webserver/nginx.nix << EOF
 { pkgs, ... }:
 {
   services.nginx = {
@@ -331,7 +317,6 @@ EOF
     clientMaxBodySize = "1024m";
 
     virtualHosts = {
-
       "$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
@@ -340,7 +325,7 @@ EOF
       "vpn.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
-	    forceSSL = true;
+	      forceSSL = true;
       };
       "git.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
@@ -349,28 +334,63 @@ EOF
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:3000";
-	      };
+	        };
         };
       };
       "cloud.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
-	    forceSSL = true;
+	      forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:80/";
+	        };
 	      };
-	    };
+      };
+      "meet.$DOMAIN" = {
+        forceSSL = true;
+        sslCertificate = "/var/lib/acme/ilchub.net/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/ilchub.net/key.pem";
+        root = pkgs.jitsi-meet;
+        extraConfig = ''
+          ssi on;
+        '';
+        locations = {
+          "@root_path" = {
+            extraConfig = ''
+              rewrite ^/(.*)$ / break;
+            '';
+          };
+          "~ ^/([^/\\?&:'\"]+)$" = {
+            tryFiles = "$uri @root_path";
+          };
+          "=/http-bind" = {
+            proxyPass = "http://localhost:5280/http-bind";
+            extraConfig = ''
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header Host $host;
+            '';
+          };
+          "=/external_api.js" = {
+            alias = "${pkgs.jitsi-meet}/libs/external_api.min.js";
+          };
+          "=/config.js" = {
+            alias = "${pkgs.jitsi-meet}/config.js";
+          };
+          "=/interface_config.js" = {
+            alias = "${pkgs.jitsi-meet}/interface_config.js";
+          };
+        };
       };
       "password.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
-	    forceSSL = true;
+	      forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:8222";
+	        };
 	      };
-	    };
       };
       "api.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
@@ -379,8 +399,28 @@ EOF
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:5050";
+	        };
 	      };
-	    };
+      };
+      "chat.$DOMAIN" = {
+        forceSSL = true;
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
+        locations = {
+          "/" = {
+            proxyPass = "https://127.0.0.1:8448";
+          };
+          "/_matrix" = {
+            proxyPass = "https://127.0.0.1:8448";
+            extraConfig = ''
+              proxy_set_header X-Forwarded-For $remote_addr;
+            '';
+          };
+        };
+        extraConfig = ''
+          proxy_ssl_server_name on;
+          proxy_pass_header Authorization;
+        '';
       };
       "social.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
@@ -400,6 +440,22 @@ EOF
   };
 }
 EOF
+
+    cat > /etc/nixos/webserver/memcached.nix << EOF
+{ pkgs, ... }:
+{
+  services = {
+    memcached = {
+      enable = true;
+      user = "memcached";
+      listen = "127.0.0.1";
+      port = "11211";
+      maxMemory = 64;
+      maxConnections = 1024;
+    };
+  };
+}
+EOF    
 
     cat > /etc/nixos/nextcloud/nextcloud.nix << EOF
 { pkgs, ... }:
@@ -451,9 +507,9 @@ EOF
         type = "sqlite3";
         host = "127.0.0.1";
         name = "gitea";
-	user = "gitea";
-	path = "/var/lib/gitea/data/gitea.db";
-	createDatabase = true;
+	      user = "gitea";
+	      path = "/var/lib/gitea/data/gitea.db";
+	      createDatabase = true;
       };
       ssh = {
         enable = true;
@@ -473,19 +529,19 @@ EOF
       settings = {
         mailer = {
           ENABLED = false;
-	    };
-	    ui = {
+	      };
+	      ui = {
           DEFAULT_THEME = "arc-green";
-	    };
-	    picture = {
+	      };
+	      picture = {
           DISABLE_GRAVATAR = true;
-	    };
-	    admin = {
+	      };
+	      admin = {
           ENABLE_KANBAN_BOARD = true;
-	    };
-	    repository = {
+	      };
+	      repository = {
           FORCE_PRIVATE = false;
-	    };
+	      };
       };
     };
   };
@@ -499,33 +555,33 @@ EOF
     dovecot2 = {
       serviceConfig = {
         cpuAccounting = true;
-	    cpuQuota = "20%";
+	      cpuQuota = "20%";
         memoryAccounting = true;
         memoryMax = "256M";
-	    startLimitIntervalSec = 500;
-	    startLimitBurst = 5;
-	    blockIOWeigth = 25;
+	      startLimitIntervalSec = 500;
+	      startLimitBurst = 5;
+	      blockIOWeigth = 25;
       };
     };
     postfix = {
       serviceConfig = {
         cpuAccounting = true;
-	    cpuQuota = "20%";
-	    memoryAccounting = true;
-	    memoryMax = "256M";
-	    startLimitIntervalSec = 500;
-	    startLimitBurst = 5;
-	    blockIOWeigth = 25;
+	      cpuQuota = "20%";
+	      memoryAccounting = true;
+	      memoryMax = "256M";
+	      startLimitIntervalSec = 500;
+	      startLimitBurst = 5;
+	      blockIOWeigth = 25;
       };
     };
     ocserv = {
       serviceConfig = {
         cpuAccounting = true;
-	    cpuQuota = "70%";
-	    memoryAccounting = true;
-	    memoryMax = "512M";
-	    startLimitIntervalSec = 500;
-	    startLimitBurst = 5;
+	      cpuQuota = "70%";
+	      memoryAccounting = true;
+	      memoryMax = "512M";
+	      startLimitIntervalSec = 500;
+	      startLimitBurst = 5;
       };
     };
     nginx = {
@@ -536,7 +592,7 @@ EOF
         memoryMax = "768M";
         startLimitIntervalSec = 500;
         startLimitBurst = 5;
-	    blockIOWeigth = 10;
+	      blockIOWeigth = 10;
       };	
     };
   };
@@ -554,7 +610,6 @@ EOF
       SHOW_JITSI_WATERMARK = false;
       SHOW_WATERMARK_FOR_GUESTS = false;
     };
-      
   };
 }
 EOF
