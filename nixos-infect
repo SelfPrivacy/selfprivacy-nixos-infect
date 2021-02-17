@@ -349,8 +349,8 @@ EOF
       };
       "meet.$DOMAIN" = {
         forceSSL = true;
-        sslCertificate = "/var/lib/acme/ilchub.net/fullchain.pem";
-        sslCertificateKey = "/var/lib/acme/ilchub.net/key.pem";
+        sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
+        sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
         root = pkgs.jitsi-meet;
         extraConfig = ''
           ssi on;
