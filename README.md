@@ -1,27 +1,18 @@
-This script aims to install NixOS on Digital Ocean droplets, Vultr servers, or
-OVH Virtual Private Servers (starting from distros that these services support
-out of the box).
+This script - is a modded version of original [nixos-infect](https://github.com/elitak/nixos-infect). It have been revritten to suit needs of SelfPrivacy project. Except transforming your Ubuntu Linux system into NixOS GNU/Linux, it deploys standart services that SelfPrivacy offers to their customers.
 
 ## Source Distros
 
 This script has been tested and can install NixOS from the following source distros:
 
 On Digital Ocean:
-- Fedora 24 x64
+- Fedora 33 x64
 - Ubuntu 20.04 x64
 
-On Vultr:
-- Ubuntu 18.10 x64
-
-On OVH Virtual Private Servers (experimental):
-- Debian
-
 On Hetzner cloud:
-- Ubuntu 18.04
+- Ubuntu 20.04
 
-YMMV with any other hoster + image combination.
-
-If you have a OpenVZ based virtualization solution then this, or any other OS takeover script will not work, this is fundamental to how OpenVZ works.
+On Scaleway cloud:
+- Ubuntu 20.04
 
 ## Considerations
 
@@ -69,18 +60,6 @@ runcmd:
   - curl https://raw.githubusercontent.com/elitak/nixos-infect/master/nixos-infect | PROVIDER=digitalocean NIXOS_IMPORT=./host.nix NIX_CHANNEL=nixos-20.03 bash 2>&1 | tee /tmp/infect.log
 
 ```
-
-## Vultr
-
-To set up a NixOS Vultr server, instantiate an Ubuntu box with the following "Startup Script":
-
-```bash
-#!/bin/sh
-
-curl https://raw.githubusercontent.com/elitak/nixos-infect/master/nixos-infect | NIX_CHANNEL=nixos-20.03 bash
-```
-
-Allow for a few minutes over the usual Ubuntu deployment time for NixOS to download & install itself.
 
 ## Hetzner cloud
 
