@@ -832,7 +832,7 @@ stdenv.mkDerivation {
 }
 EOF
 
-cat > /etc/nixos/social/pleroma-package.nix << EOF
+cat > /etc/nixos/social/pleroma-module.nix << EOF
 { config, options, lib, pkgs, stdenv, ... }:
 let
   cfg = config.services.pleroma;
@@ -967,7 +967,7 @@ in {
 }
 EOF
 
-cat > /etc/nixos/social/pleroma-module.nix << EOF
+cat > /etc/nixos/social/pleroma.nix << EOF
 { pkgs, ... }:
 {
   nixpkgs.overlays = [(self: super: {
