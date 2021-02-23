@@ -361,24 +361,24 @@ EOF
               rewrite ^/(.*)$ / break;
             '';
           };
-          "~ ^/([^/\\?&:'\"]+)$" = {
-            tryFiles = "$uri @root_path";
+          "~ ^/([^/\\\\?&:'\\"]+)$" = {
+            tryFiles = "\$uri @root_path";
           };
           "=/http-bind" = {
             proxyPass = "http://localhost:5280/http-bind";
             extraConfig = ''
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header Host \$host;
             '';
           };
           "=/external_api.js" = {
-            alias = "${pkgs.jitsi-meet}/libs/external_api.min.js";
+            alias = "\${pkgs.jitsi-meet}/libs/external_api.min.js";
           };
           "=/config.js" = {
-            alias = "${pkgs.jitsi-meet}/config.js";
+            alias = "\${pkgs.jitsi-meet}/config.js";
           };
           "=/interface_config.js" = {
-            alias = "${pkgs.jitsi-meet}/interface_config.js";
+            alias = "\${pkgs.jitsi-meet}/interface_config.js";
           };
         };
       };
