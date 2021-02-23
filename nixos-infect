@@ -41,21 +41,21 @@ makeConf() {
     $network_import
     $NIXOS_IMPORT
     ./files.nix
-	  ./mailserver/system/mailserver.nix
+    ./mailserver/system/mailserver.nix
     ./vpn/ocserv.nix
     ./api/api.nix
-    ./api/api-service.nix
+    ./api/api-module.nix
     ./social/pleroma-module.nix
     ./social/pleroma.nix
-	  ./letsencrypt/acme.nix
-	  ./backup/restic.nix
-	  ./passmgr/bitwarden.nix
-	  ./webserver/nginx.nix
+    ./letsencrypt/acme.nix
+    ./backup/restic.nix
+    ./passmgr/bitwarden.nix
+    ./webserver/nginx.nix
     ./webserver/memcached.nix
-	  ./nextcloud/nextcloud.nix
+    ./nextcloud/nextcloud.nix
     ./resources/limits.nix
     ./videomeet/jitsi.nix
-	  ./git/gitea.nix
+    ./git/gitea.nix
   ];
 
   boot.cleanTmpDir = true;
@@ -196,17 +196,17 @@ EOF
     # A list of all login accounts. To create the password hashes, use
     # mkpasswd -m sha-512 "super secret password"
     loginAccounts = {
-	    "$LUSER@$DOMAIN" = {
-	      hashedPassword = "$HASHED_PASSWORD";
+      "$LUSER@$DOMAIN" = {
+        hashedPassword = "$HASHED_PASSWORD";
         catchAll = [ "$DOMAIN" ];
-	      sieveScript = ''
-	        require ["fileinto", "mailbox"];
-		      if header :contains "Chat-Version" "1.0"
-		      {	
-    		    fileinto :create "DeltaChat";
-		        stop;
-		      }
-	      '';
+        sieveScript = ''
+          require ["fileinto", "mailbox"];
+          if header :contains "Chat-Version" "1.0"
+          {	
+            fileinto :create "DeltaChat";
+            stop;
+          }
+        '';
       };
     };
 
@@ -325,7 +325,7 @@ EOF
       "vpn.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
-	      forceSSL = true;
+        forceSSL = true;
       };
       "git.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
@@ -334,18 +334,18 @@ EOF
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:3000";
-	        };
+          };
         };
       };
       "cloud.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
-	      forceSSL = true;
+        forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:80/";
-	        };
-	      };
+          };
+        };
       };
       "meet.$DOMAIN" = {
         forceSSL = true;
@@ -385,12 +385,12 @@ EOF
       "password.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
         sslCertificateKey = "/var/lib/acme/$DOMAIN/key.pem";
-	      forceSSL = true;
+        forceSSL = true;
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:8222";
-	        };
-	      };
+          };
+        };
       };
       "api.$DOMAIN" = {
         sslCertificate = "/var/lib/acme/$DOMAIN/fullchain.pem";
@@ -399,8 +399,8 @@ EOF
         locations = {
           "/" = {
             proxyPass = "http://127.0.0.1:5050";
-	        };
-	      };
+          };
+        };
       };
       "chat.$DOMAIN" = {
         forceSSL = true;
@@ -507,9 +507,9 @@ EOF
         type = "sqlite3";
         host = "127.0.0.1";
         name = "gitea";
-	      user = "gitea";
-	      path = "/var/lib/gitea/data/gitea.db";
-	      createDatabase = true;
+        user = "gitea";
+        path = "/var/lib/gitea/data/gitea.db";
+        createDatabase = true;
       };
       ssh = {
         enable = true;
@@ -529,19 +529,19 @@ EOF
       settings = {
         mailer = {
           ENABLED = false;
-	      };
-	      ui = {
+        };
+        ui = {
           DEFAULT_THEME = "arc-green";
-	      };
-	      picture = {
+        };
+        picture = {
           DISABLE_GRAVATAR = true;
-	      };
-	      admin = {
+        };
+        admin = {
           ENABLE_KANBAN_BOARD = true;
-	      };
-	      repository = {
+        };
+        repository = {
           FORCE_PRIVATE = false;
-	      };
+        };
       };
     };
   };
@@ -555,33 +555,33 @@ EOF
     dovecot2 = {
       serviceConfig = {
         cpuAccounting = true;
-	      cpuQuota = "20%";
+        cpuQuota = "20%";
         memoryAccounting = true;
         memoryMax = "256M";
-	      startLimitIntervalSec = 500;
-	      startLimitBurst = 5;
-	      blockIOWeigth = 25;
+        startLimitIntervalSec = 500;
+        startLimitBurst = 5;
+        blockIOWeigth = 25;
       };
     };
     postfix = {
       serviceConfig = {
         cpuAccounting = true;
-	      cpuQuota = "20%";
-	      memoryAccounting = true;
-	      memoryMax = "256M";
-	      startLimitIntervalSec = 500;
-	      startLimitBurst = 5;
-	      blockIOWeigth = 25;
+        cpuQuota = "20%";
+        memoryAccounting = true;
+        memoryMax = "256M";
+        startLimitIntervalSec = 500;
+        startLimitBurst = 5;
+        blockIOWeigth = 25;
       };
     };
     ocserv = {
       serviceConfig = {
         cpuAccounting = true;
-	      cpuQuota = "70%";
-	      memoryAccounting = true;
-	      memoryMax = "512M";
-	      startLimitIntervalSec = 500;
-	      startLimitBurst = 5;
+        cpuQuota = "70%";
+        memoryAccounting = true;
+        memoryMax = "512M";
+        startLimitIntervalSec = 500;
+        startLimitBurst = 5;
       };
     };
     nginx = {
@@ -592,7 +592,7 @@ EOF
         memoryMax = "768M";
         startLimitIntervalSec = 500;
         startLimitBurst = 5;
-	      blockIOWeigth = 10;
+        blockIOWeigth = 10;
       };	
     };
   };
@@ -658,7 +658,7 @@ in
   if pkgs.lib.inNixShell then drv.env else drv
 EOF
 
-cat > /etc/nixos/api/api-service.nix << EOF
+cat > /etc/nixos/api/api-module.nix << EOF
 { config, lib, pkgs, ... }:
 
 with lib;
@@ -967,7 +967,7 @@ in {
 }
 EOF
 
-cat > /etc/nixos/social/pleroma-package.nix << EOF
+cat > /etc/nixos/social/pleroma-module.nix << EOF
 { pkgs, ... }:
 {
   nixpkgs.overlays = [(self: super: {
