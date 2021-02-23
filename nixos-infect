@@ -603,7 +603,7 @@ EOF
   services.jitsi-meet = {
     enable = true;
     hostName = "meet.$DOMAIN";
-    nginx.enable = true;
+    nginx.enable = false;
     interfaceConfig = {
       SHOW_JITSI_WATERMARK = false;
       SHOW_WATERMARK_FOR_GUESTS = false;
