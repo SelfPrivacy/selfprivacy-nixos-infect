@@ -86,8 +86,6 @@ makeConf() {
   ];
   environment.variables = {
     DOMAIN = "$DOMAIN";
-    AWS_ACCESS_KEY_ID = "$AWS_ACCESS_KEY_ID";
-    AWS_SECRET_ACCESS_KEY = "$AWS_SECRET_ACCESS_KEY";
   };
   system.autoUpgrade.enable = true;
   system.autoUpgrade.allowReboot = false;
@@ -455,7 +453,7 @@ EOF
     };
   };
 }
-EOF    
+EOF
 
     cat > /etc/nixos/nextcloud/nextcloud.nix << EOF
 { pkgs, ... }:
