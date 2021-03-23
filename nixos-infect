@@ -127,7 +127,10 @@ EOF
 {
   imports = [ <nixpkgs/nixos/modules/profiles/qemu-guest.nix> ];
   boot.loader.grub.device = "$grubdev";
-  fileSystems."/" = { device = "$rootfsdev"; fsType = "ext4"; };
+  fileSystems = {
+    "/" = { device = "$rootfsdev"; fsType = "ext4"; };
+    "/var" = { device = "/dev/sdb"; fsType = "ext4" };
+  };
 }
 EOF
 
