@@ -48,6 +48,7 @@ makeConf() {
     ./social/pleroma-module.nix
     ./social/pleroma.nix
     ./letsencrypt/acme.nix
+    ./letsencrypt/resolve.nix
     ./backup/restic.nix
     ./passmgr/bitwarden.nix
     ./webserver/nginx.nix
@@ -255,6 +256,27 @@ EOF
   };
 }
 EOF
+    cat > /etc/nixos/letsencrypt/resolve.nix << EOF
+{ pkgs, ... }:
+{
+  systemd = {
+    services = {
+      "acme-$DOMAIN" = {
+        serviceConfig = {
+          StartLimitBurst = 5;
+          StartLimitIntervalSec = 5;
+          Restart = "on-failure";
+        };
+      };
+      "nginx-config-reload" = {
+        serviceConfig = {
+          After = [ "acme-$DOMAIN.service" ];
+        };
+      };
+    };
+  };
+}
+EOF
 
     cat > /etc/nixos/backup/restic.nix << EOF
 { pkgs, ... }:
@@ -311,6 +333,7 @@ EOF
 {
   services.nginx = {
     enable = true;
+    enableReload = true;
     recommendedGzipSettings = true;
     recommendedOptimisation = true;
     recommendedProxySettings = true;
