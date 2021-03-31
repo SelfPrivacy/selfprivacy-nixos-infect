@@ -130,7 +130,7 @@ EOF
   boot.loader.grub.device = "$grubdev";
   fileSystems = {
     "/" = { device = "$rootfsdev"; fsType = "ext4"; };
-    "/var" = { device = "/dev/sdb"; fsType = "ext4" };
+    "/var" = { device = "/dev/sdb"; fsType = "ext4"; };
   };
 }
 EOF
