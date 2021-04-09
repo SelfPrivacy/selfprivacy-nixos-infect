@@ -1095,8 +1095,8 @@ buildGoModule rec {
   '';
 
   installPhase = ''
-    mkdir -p $out/bin
-    cp -r * $out/bin
+    mkdir -p \$out/bin
+    cp -r * \$out/bin
   '';
 
   meta = with lib; {
