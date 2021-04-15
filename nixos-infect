@@ -42,6 +42,7 @@ makeConf() {
     $NIXOS_IMPORT
     ./files.nix
     ./mailserver/system/mailserver.nix
+    ./mailserver/system/alps.nix
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-module.nix
@@ -63,7 +64,7 @@ makeConf() {
   networking = {
     hostName = "$(hostname)";
     firewall = {
-      allowedTCPPorts = lib.mkForce [ 22 25 80 143 443 587 8443 ];
+      allowedTCPPorts = lib.mkForce [ 22 25 80 143 443 465 587 993 8443 ];
       allowedUDPPorts = lib.mkForce [ 8443 ];
     };
   };
@@ -992,7 +993,7 @@ cat > /etc/nixos/social/pleroma.nix << EOF
       initialScript = "/etc/setup.psql";
     };
   };
-  environment.etc."pleroma_setup.psql".text = ''
+  environment.etc."setup.psql".text = ''
 CREATE USER pleroma WITH ENCRYPTED PASSWORD '$DB_PASSWORD';
 CREATE DATABASE pleroma OWNER pleroma;
 \\c pleroma;
@@ -1012,7 +1013,7 @@ import Config
 
 config :pleroma, Pleroma.Web.Endpoint,
    url: [host: "social.$DOMAIN", scheme: "https", port: 443],
-   http: [ip: {127, 0, 0, 1}, port: 4000],
+   http: [ip: {127, 0, 0, 1}, port: 4000]
    #secret_key_base: "",
    #signing_salt: ""
 
@@ -1037,7 +1038,7 @@ config :pleroma, Pleroma.Repo,
   hostname: "localhost",
   pool_size: 10
 
-config :web_push_encryption, :vapid_details,
+#config :web_push_encryption, :vapid_details,
   #subject: "",
   #public_key: "",
   #private_key: ""
@@ -1053,6 +1054,57 @@ config :pleroma, :http_security,
 
 config :pleroma, configurable_from_database: false
 
+EOF
+
+cat > /etc/nixos/mailserver/system/alps.nix << EOF
+{ pkgs, lib, fetchgit, buildGoModule, ... }: {
+  nixpkgs.overlays =
+    [ (self: super: { alps = self.callPackage ./alps-package.nix { }; }) ];
+
+  systemd.services = {
+    alps = {
+      path = [ pkgs.alps pkgs.coreutils ];
+      serviceConfig = {
+        ExecStart =
+          "\${pkgs.alps}/bin/alps -theme sourcehut imaps://$DOMAIN:993 smtps://$DOMAIN:465";
+        WorkingDirectory = "\${pkgs.alps}/bin";
+      };
+    };
+  };
+}
+EOF
+
+cat > /etc/nixos/mailserver/system/alps-package.nix << EOF
+{ lib, fetchgit, buildGoModule, ... }:
+buildGoModule rec {
+  pname = "alps";
+  version = "v1.0.0"; # latest available tag at the moment
+
+  src = fetchGit {
+    url = "https://git.selfprivacy.org/ilchub/selfprivacy-alps";
+    rev = "dc2109ca2fdabfbda5d924faa4947f5694d5d758";
+  };
+
+  vendorSha256 = "0bqg0qjam4mvh07wfil6l5spz32mk5a7kfxxnwfyva805pzmn6dk";
+
+  deleteVendor = false;
+  runVend = true;
+
+  buildPhase = ''
+    go build ./cmd/alps
+  '';
+
+  installPhase = ''
+    mkdir -p \$out/bin
+    cp -r * \$out/bin
+  '';
+
+  meta = with lib; {
+    description = "Webmail application for the dovecot/postfix mailserver";
+    homepage = "https://git.selfprivacy.org/ilchub/selfprivacy-alps";
+    license = licenses.mit;
+  };
+}
 EOF
 
   [[ -n "$doNetConf" ]] && makeNetworkingConf || true
