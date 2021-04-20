@@ -118,7 +118,7 @@ makeConf() {
   users.users = {
     "$LUSER" = {
       isNormalUser = true;
-      hashedPassword = "$HASHED_PASSWORD";
+      hashedPassword = "\$6\$$SALT\$$HASHED_PASSWORD";
     };
   };
 }
