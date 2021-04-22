@@ -609,7 +609,7 @@ EOF
 { pkgs, ... }:
 {
   services.jitsi-meet = {
-    enable = true;
+    enable = false;
     hostName = "meet.$DOMAIN";
     nginx.enable = false;
     interfaceConfig = {
