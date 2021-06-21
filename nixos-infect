@@ -42,6 +42,7 @@ makeConf() {
     $network_import
     $NIXOS_IMPORT
     ./files.nix
+    ./users.nix
     ./mailserver/system/mailserver.nix
     ./mailserver/system/alps.nix
     ./vpn/ocserv.nix
@@ -92,7 +93,7 @@ makeConf() {
   };
   system.autoUpgrade.enable = true;
   system.autoUpgrade.allowReboot = false;
-  system.autoUpgrade.channel = https://nixos.org/channels/nixos-20.09-small;
+  system.autoUpgrade.channel = https://nixos.org/channels/nixos-21.05-small;
   nix = {
     optimise.automatic = true;
     gc = {
@@ -113,13 +114,6 @@ makeConf() {
   security = {
     sudo = {
       enable = true;
-    };
-  };
-  users.mutableUsers = false;
-  users.users = {
-    "$LUSER" = {
-      isNormalUser = true;
-      hashedPassword = "$HASHED_PASSWORD";
     };
   };
 }
@@ -172,6 +166,23 @@ EOF
         "f /var/nextcloud-admin-pass 0440 nextcloud nextcloud - \${nextcloudAdminPass}"
         "f /var/cloudflareCredentials.ini 0440 nginx acmerecievers - \${cloudflareCredentials}"
       ];
+}
+EOF
+
+    cat > /etc/nixos/users.nix << EOF
+{ pkgs, ... }:
+{
+  users.mutableUsers = false;
+  users = { 
+    users = {
+      #begin
+      "$LUSER" = {
+        isNormalUser = true;
+        hashedPassword = "$HASHED_PASSWORD";
+      };
+      #end
+    };
+  };
 }
 EOF
 
