@@ -48,7 +48,7 @@ makeConf() {
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-module.nix
-    ./social/pleroma-module.nix
+    #./social/pleroma-module.nix
     ./social/pleroma.nix
     ./letsencrypt/acme.nix
     ./letsencrypt/resolve.nix
@@ -203,6 +203,13 @@ EOF
     enablePAM = lib.mkForce true;
     showPAMFailure = lib.mkForce true;
   };
+
+  users.users = {
+    virtualMail = {
+      isNormalUser = false;
+    };
+  };
+
   mailserver = {
     enable = true;
     fqdn = "$DOMAIN";
@@ -314,6 +321,7 @@ EOF
   };
   users.users.restic = {
     isNormalUser = false;
+    isSystemUser = true;
   };
   environment.etc."restic/resticPasswd".text = ''
 $PASSWORD
@@ -733,6 +741,7 @@ cat > /etc/nixos/vpn/ocserv.nix << EOF
   };
   users.users.ocserv = {
     isNormalUser = false;
+    isSystemUser = true;
     extraGroups = [ "ocserv" "acmerecievers" ];
   };
   services.ocserv = {
