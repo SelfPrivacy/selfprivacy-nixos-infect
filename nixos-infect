@@ -713,7 +713,7 @@ in
       environment = {
         PYTHONUNBUFFERED = "1";
       };
-      path = [ "/var/" "/var/dkim/" pkgs.coreutils pkgs.gnutar pkgs.xz.bin pkgs.gzip pkgs.gitMinimal pkgs.config.nix.package.out ];
+      path = [ "/var/" "/var/dkim/" pkgs.coreutils pkgs.gnutar pkgs.xz.bin pkgs.gzip pkgs.gitMinimal config.nix.package.out pkgs.nixos-rebuild ];
       after = [ "network-online.target" ];
       wantedBy = [ "network-online.target" ];
       serviceConfig = {
