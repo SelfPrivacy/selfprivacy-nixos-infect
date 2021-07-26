@@ -206,7 +206,7 @@ EOF
 
   users.users = {
     virtualMail = {
-      isSystemUser = true;
+      isNormalUser = false;
     };
   };
 
