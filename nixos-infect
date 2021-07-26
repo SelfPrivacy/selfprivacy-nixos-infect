@@ -69,6 +69,7 @@ makeConf() {
       allowedTCPPorts = lib.mkForce [ 22 25 80 143 443 465 587 993 8443 ];
       allowedUDPPorts = lib.mkForce [ 8443 ];
     };
+    nameservers = [ "1.1.1.1" "1.0.0.1" ];
   };
   time.timeZone = "Europe/Uzhgorod";
   i18n.defaultLocale = "en_GB.UTF-8";
@@ -710,9 +711,11 @@ in
 
     systemd.services.selfprivacy-api = {
       description = "API Server used to control system from the mobile application";
-      environment = {
+      environment = config.nix.envVars // {
+        inherit (config.environment.sessionVariables) NIX_PATH;
+        HOME = "/root";
         PYTHONUNBUFFERED = "1";
-      };
+      } // config.networking.proxy.envVars;
       path = [ "/var/" "/var/dkim/" pkgs.coreutils pkgs.gnutar pkgs.xz.bin pkgs.gzip pkgs.gitMinimal config.nix.package.out pkgs.nixos-rebuild ];
       after = [ "network-online.target" ];
       wantedBy = [ "network-online.target" ];
