@@ -207,6 +207,7 @@ EOF
   users.users = {
     virtualMail = {
       isNormalUser = false;
+      isSystemUser = true;
     };
   };
 
@@ -648,6 +649,7 @@ cat > /etc/nixos/api/api.nix << EOF
 
   users.users."selfprivacy-api" = {
     isNormalUser = false;
+    isSystemUser = true;
     extraGroups = [ "opendkim" ];
   };
   users.groups."selfprivacy-api" = {
@@ -712,18 +714,11 @@ in
       environment = {
         PYTHONUNBUFFERED = "1";
       };
-      path = [ "/var/" "/var/dkim/" ];
+      path = [ "/var/" "/var/dkim/" pkgs.coreutils pkgs.gnutar pkgs.xz.bin pkgs.gzip pkgs.gitMinimal pkgs.config.nix.package.out ];
       after = [ "network-online.target" ];
       wantedBy = [ "network-online.target" ];
       serviceConfig = {
         User = "root";
-        PrivateDevices = "true";
-        ProtectKernelTunables = "true";
-        ProtectKernelModules = "true";
-        LockPersonality = "true";
-        RestrictRealtime = "true";
-        SystemCallFilter = "@system-service @network-io @signal";
-        SystemCallErrorNumber = "EPERM";
         ExecStart = "\${selfprivacy-api}/bin/main.py";
         Restart = "always";
         RestartSec = "5";
