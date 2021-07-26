@@ -192,10 +192,10 @@ EOF
   imports = [
     (builtins.fetchTarball {
       # Pick a commit from the branch you are interested in
-      url = "https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/archive/99f843de/nixos-mailserver-99f843de.tar.gz";
+      url = "https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/archive/5675b122/nixos-mailserver-5675b122.tar.gz";
 
       # And set its hash
-      sha256 = "1af7phs8a2j26ywsm5mfhzvqmy0wdsph7ajs9s65c4r1bfq646fw";
+      sha256 = "1fwhb7a5v9c98nzhf3dyqf3a5ianqh7k50zizj8v5nmj3blxw4pi";
     })
   ];
 
