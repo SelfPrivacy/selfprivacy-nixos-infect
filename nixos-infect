@@ -42,12 +42,13 @@ makeConf() {
     $network_import
     $NIXOS_IMPORT
     ./files.nix
+    ./users.nix
     ./mailserver/system/mailserver.nix
     ./mailserver/system/alps.nix
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-module.nix
-    ./social/pleroma-module.nix
+    #./social/pleroma-module.nix
     ./social/pleroma.nix
     ./letsencrypt/acme.nix
     ./letsencrypt/resolve.nix
@@ -68,6 +69,7 @@ makeConf() {
       allowedTCPPorts = lib.mkForce [ 22 25 80 143 443 465 587 993 8443 ];
       allowedUDPPorts = lib.mkForce [ 8443 ];
     };
+    nameservers = [ "1.1.1.1" "1.0.0.1" ];
   };
   time.timeZone = "Europe/Uzhgorod";
   i18n.defaultLocale = "en_GB.UTF-8";
@@ -92,7 +94,7 @@ makeConf() {
   };
   system.autoUpgrade.enable = true;
   system.autoUpgrade.allowReboot = false;
-  system.autoUpgrade.channel = https://nixos.org/channels/nixos-20.09-small;
+  system.autoUpgrade.channel = https://nixos.org/channels/nixos-21.05-small;
   nix = {
     optimise.automatic = true;
     gc = {
@@ -113,13 +115,6 @@ makeConf() {
   security = {
     sudo = {
       enable = true;
-    };
-  };
-  users.mutableUsers = false;
-  users.users = {
-    "$LUSER" = {
-      isNormalUser = true;
-      hashedPassword = "$HASHED_PASSWORD";
     };
   };
 }
@@ -175,16 +170,33 @@ EOF
 }
 EOF
 
+    cat > /etc/nixos/users.nix << EOF
+{ pkgs, ... }:
+{
+  users.mutableUsers = false;
+  users = { 
+    users = {
+      #begin
+      "$LUSER" = {
+        isNormalUser = true;
+        hashedPassword = "$HASHED_PASSWORD";
+      };
+      #end
+    };
+  };
+}
+EOF
+
     cat > /etc/nixos/mailserver/system/mailserver.nix << EOF
 { config, pkgs, lib, ... }:
 {
   imports = [
     (builtins.fetchTarball {
       # Pick a commit from the branch you are interested in
-      url = "https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/archive/99f843de/nixos-mailserver-99f843de.tar.gz";
+      url = "https://gitlab.com/simple-nixos-mailserver/nixos-mailserver/-/archive/5675b122/nixos-mailserver-5675b122.tar.gz";
 
       # And set its hash
-      sha256 = "1af7phs8a2j26ywsm5mfhzvqmy0wdsph7ajs9s65c4r1bfq646fw";
+      sha256 = "1fwhb7a5v9c98nzhf3dyqf3a5ianqh7k50zizj8v5nmj3blxw4pi";
     })
   ];
 
@@ -192,6 +204,13 @@ EOF
     enablePAM = lib.mkForce true;
     showPAMFailure = lib.mkForce true;
   };
+
+  users.users = {
+    virtualMail = {
+      isNormalUser = false;
+    };
+  };
+
   mailserver = {
     enable = true;
     fqdn = "$DOMAIN";
@@ -303,6 +322,7 @@ EOF
   };
   users.users.restic = {
     isNormalUser = false;
+    isSystemUser = true;
   };
   environment.etc."restic/resticPasswd".text = ''
 $PASSWORD
@@ -455,7 +475,7 @@ EOF
       enable = true;
       user = "memcached";
       listen = "127.0.0.1";
-      port = "11211";
+      port = 11211;
       maxMemory = 64;
       maxConnections = 1024;
     };
@@ -629,6 +649,7 @@ cat > /etc/nixos/api/api.nix << EOF
 
   users.users."selfprivacy-api" = {
     isNormalUser = false;
+    isSystemUser = true;
     extraGroups = [ "opendkim" ];
   };
   users.groups."selfprivacy-api" = {
@@ -650,7 +671,7 @@ let
       version = "1.0";
       src = builtins.fetchGit {
         url = "https://git.selfprivacy.org/ilchub/selfprivacy-rest-api.git";
-        rev = "d7a6b3ca12d936165a4fc1c6265a2dfc3fd6229e";
+        rev = "0980039a67c32a128a96ac73c98fc87aad64674b";
       };
       propagatedBuildInputs = [ flask flask-restful pandas ];
       meta = {
@@ -690,21 +711,16 @@ in
 
     systemd.services.selfprivacy-api = {
       description = "API Server used to control system from the mobile application";
-      environment = {
+      environment = config.nix.envVars // {
+        inherit (config.environment.sessionVariables) NIX_PATH;
+        HOME = "/root";
         PYTHONUNBUFFERED = "1";
-      };
-      path = [ "/var/" "/var/dkim/" ];
+      } // config.networking.proxy.envVars;
+      path = [ "/var/" "/var/dkim/" pkgs.coreutils pkgs.gnutar pkgs.xz.bin pkgs.gzip pkgs.gitMinimal config.nix.package.out pkgs.nixos-rebuild ];
       after = [ "network-online.target" ];
       wantedBy = [ "network-online.target" ];
       serviceConfig = {
         User = "root";
-        PrivateDevices = "true";
-        ProtectKernelTunables = "true";
-        ProtectKernelModules = "true";
-        LockPersonality = "true";
-        RestrictRealtime = "true";
-        SystemCallFilter = "@system-service @network-io @signal";
-        SystemCallErrorNumber = "EPERM";
         ExecStart = "\${selfprivacy-api}/bin/main.py";
         Restart = "always";
         RestartSec = "5";
@@ -722,6 +738,7 @@ cat > /etc/nixos/vpn/ocserv.nix << EOF
   };
   users.users.ocserv = {
     isNormalUser = false;
+    isSystemUser = true;
     extraGroups = [ "ocserv" "acmerecievers" ];
   };
   services.ocserv = {
