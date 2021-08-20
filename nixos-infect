@@ -671,7 +671,7 @@ let
       version = "1.0";
       src = builtins.fetchGit {
         url = "https://git.selfprivacy.org/ilchub/selfprivacy-rest-api.git";
-        rev = "0980039a67c32a128a96ac73c98fc87aad64674b";
+        rev = "b9093f041b39f8c46e50084c3708f06148a01cee";
       };
       propagatedBuildInputs = [ flask flask-restful pandas ];
       meta = {
