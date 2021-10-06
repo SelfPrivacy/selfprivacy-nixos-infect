@@ -492,7 +492,7 @@ EOF
     hostName = "cloud.$DOMAIN";
 
     # Use HTTPS for links
-    https = false;
+    https = true;
     
     # Auto-update Nextcloud Apps
     autoUpdateApps.enable = true;
