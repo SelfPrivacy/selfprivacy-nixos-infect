@@ -48,7 +48,6 @@ makeConf() {
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-module.nix
-    #./social/pleroma-module.nix
     ./social/pleroma.nix
     ./letsencrypt/acme.nix
     ./letsencrypt/resolve.nix
@@ -488,11 +487,11 @@ EOF
 {
   services.nextcloud = {
     enable = true;
-    package = pkgs.nextcloud21;
+    package = pkgs.nextcloud22;
     hostName = "cloud.$DOMAIN";
 
     # Use HTTPS for links
-    https = false;
+    https = true;
     
     # Auto-update Nextcloud Apps
     autoUpdateApps.enable = true;
@@ -671,7 +670,7 @@ let
       version = "1.0";
       src = builtins.fetchGit {
         url = "https://git.selfprivacy.org/ilchub/selfprivacy-rest-api.git";
-        rev = "0980039a67c32a128a96ac73c98fc87aad64674b";
+        rev = "568add06c6d622d417582ce55e3cc960686721ed";
       };
       propagatedBuildInputs = [ flask flask-restful pandas ];
       meta = {
@@ -776,6 +775,9 @@ dns = 1.1.1.1
 dns = 1.0.0.1
 
 route = default
+
+cisco-client-compat = true
+
     '';
   };
 }
@@ -1338,6 +1340,10 @@ infect() {
 
 apt update
 apt install -y git whois
+cat > /etc/resolv.conf << EOF
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+EOF
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
 checkEnv

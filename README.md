@@ -5,7 +5,6 @@ This script - is a modded version of original [nixos-infect](https://github.com/
 This script has been tested and can install NixOS from the following source distros:
 
 On Digital Ocean:
-- Fedora 33 x64
 - Ubuntu 20.04 x64
 
 On Hetzner cloud:
