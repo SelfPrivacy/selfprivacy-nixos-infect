@@ -1340,10 +1340,10 @@ infect() {
 
 apt update
 apt install -y git whois
-#cat > /etc/resolv.conf << EOF
-#nameserver 1.1.1.1
-#nameserver 1.0.0.1
-#EOF
+cat > /etc/resolv.conf << EOF
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+EOF
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
 checkEnv
