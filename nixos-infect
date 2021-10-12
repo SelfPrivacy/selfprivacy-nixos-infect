@@ -48,7 +48,6 @@ makeConf() {
     ./vpn/ocserv.nix
     ./api/api.nix
     ./api/api-module.nix
-    #./social/pleroma-module.nix
     ./social/pleroma.nix
     ./letsencrypt/acme.nix
     ./letsencrypt/resolve.nix
@@ -488,7 +487,7 @@ EOF
 {
   services.nextcloud = {
     enable = true;
-    package = pkgs.nextcloud21;
+    package = pkgs.nextcloud22;
     hostName = "cloud.$DOMAIN";
 
     # Use HTTPS for links
@@ -671,7 +670,7 @@ let
       version = "1.0";
       src = builtins.fetchGit {
         url = "https://git.selfprivacy.org/ilchub/selfprivacy-rest-api.git";
-        rev = "e4267aba180ad078868ad9e0f7f4fd7c944576d6";
+        rev = "568add06c6d622d417582ce55e3cc960686721ed";
       };
       propagatedBuildInputs = [ flask flask-restful pandas ];
       meta = {
