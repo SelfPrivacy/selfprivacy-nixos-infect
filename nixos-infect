@@ -168,11 +168,10 @@ cat > /etc/nixos/userdata/userdata.json << EOF
         ],
         "passwordAuthentication": true
     },
-    "username": "owner",
+    "username": "$USERNAME",
     "users": [
         {
-            "hashedPassword": "$HASHED_PASSWORD",
-            "username": "$LUSER"
+
         }
     ]
 }
