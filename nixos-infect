@@ -161,19 +161,7 @@ cat > /etc/nixos/userdata/userdata.json << EOF
     },
     "timezone": "Europe/Uzhgorod",
     "resticPassword": "$PASSWORD",
-    "ssh": {
-        "enable": true,
-        "rootSshKeys": [
-            "ssh-ed25519 KEY user@host"
-        ],
-        "passwordAuthentication": true
-    },
-    "username": "$USERNAME",
-    "users": [
-        {
-
-        }
-    ]
+    "username": "$LUSER"
 }
 EOF
 }
