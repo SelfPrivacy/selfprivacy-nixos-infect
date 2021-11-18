@@ -21,7 +21,48 @@ makeConf() {
   done
   local network_import=""
 
-  [[ -n "$doNetConf" ]] && network_import="./networking.nix # generated at runtime by nixos-infect"
+  cat > /etc/nixos/userdata/userdata.json << EOF
+{
+    "api": {
+        "token": "$API_TOKEN"
+    },
+    "backblaze": {
+        "accountId": "$BACKBLAZE_KEY_ID",
+        "accountKey": "$BACKBLAZE_ACCOUNT_KEY",
+        "bucket": "$BACKBLAZE_BUCKET_NAME"
+    },
+    "bitwarden": {
+        "enable": true
+    },
+    "cloudflare": {
+        "apiKey": "$CF_TOKEN"
+    },
+    "databasePassword": "$DB_PASSWORD",
+    "domain": "$DOMAIN",
+    "hashedMasterPassword": "$HASHED_PASSWORD",
+    "hostname": "$DOMAIN",
+    "nextcloud": {
+        "enable": true,
+        "adminPassword": "$PASSWORD",
+        "databasePassword": "$PASSWORD"
+    },
+    "gitea": {
+        "enable": true
+    },
+    "jitsi": {
+        "enable": true
+    },
+    "ocserv": {
+        "enable": true
+    },
+    "pleroma": {
+        "enable": true
+    },
+    "timezone": "Europe/Uzhgorod",
+    "resticPassword": "$PASSWORD",
+    "username": "$LUSER"
+}
+EOF
 
   if isEFI; then
     bootcfg=$(cat << EOF
@@ -122,49 +163,6 @@ EOF
     ATTR{address}=="${ether0}", NAME="${eth0_name}"
     $extraRules1
   '';
-}
-EOF
-
-cat > /etc/nixos/userdata/userdata.json << EOF
-{
-    "api": {
-        "token": "$API_TOKEN"
-    },
-    "backblaze": {
-        "accountId": "$BACKBLAZE_KEY_ID",
-        "accountKey": "$BACKBLAZE_ACCOUNT_KEY",
-        "bucket": "$BACKBLAZE_BUCKET_NAME"
-    },
-    "bitwarden": {
-        "enable": true
-    },
-    "cloudflare": {
-        "apiKey": "$CF_TOKEN"
-    },
-    "databasePassword": "$DB_PASSWORD",
-    "domain": "$DOMAIN",
-    "hashedMasterPassword": "$HASHED_PASSWORD",
-    "hostname": "$DOMAIN",
-    "nextcloud": {
-        "enable": true,
-        "adminPassword": "$PASSWORD",
-        "databasePassword": "$PASSWORD"
-    },
-    "gitea": {
-        "enable": true
-    },
-    "jitsi": {
-        "enable": true
-    },
-    "ocserv": {
-        "enable": true
-    },
-    "pleroma": {
-        "enable": true
-    },
-    "timezone": "Europe/Uzhgorod",
-    "resticPassword": "$PASSWORD",
-    "username": "$LUSER"
 }
 EOF
 }
