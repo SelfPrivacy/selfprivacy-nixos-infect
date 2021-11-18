@@ -40,7 +40,7 @@ makeConf() {
     "databasePassword": "$DB_PASSWORD",
     "domain": "$DOMAIN",
     "hashedMasterPassword": "$HASHED_PASSWORD",
-    "hostname": "$DOMAIN",
+    "hostname": "$HOSTNAME",
     "nextcloud": {
         "enable": true,
         "adminPassword": "$PASSWORD",
