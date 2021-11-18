@@ -64,6 +64,7 @@ makeConf() {
     "username": "$LUSER"
 }
 EOF
+  chmod 0600 /etc/nixos/userdata/userdata.json
 
   if isEFI; then
     bootcfg=$(cat << EOF
