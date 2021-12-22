@@ -1,0 +1,15 @@
+kind: pipeline
+type: exec
+name: default
+
+steps:
+- name: deploy
+  environment:
+    PASSWORD:
+      from_secret: HETZNER_TOKEN
+  commands:
+    - >
+      curl -X POST \
+      -H "Authorization: Bearer $HETZNER_TOKEN"
+      -H "Content-Type: application/json" \
+      -d '{"automount":false,"datacenter":"nbg1-dc3,"firewalls":[],"image":"ubuntu-20.04","labels":{},"location":"nbg1","name":"ci-sibling","networks":[],"server_type":"cx11","ssh_keys":[],"start_after_create":true,"user_data":"#cloud-config\nruncmd:\n- [touch, /root/cloud-init-worked]\n","volumes":[]"}'
