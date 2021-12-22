@@ -12,5 +12,14 @@ steps:
       curl -X POST
       -H "Authorization: Bearer $PASSWORD"
       -H "Content-Type: application/json"
-      -d '{"automount":false,"firewalls":[],"image":"ubuntu-20.04","labels":{},"location":"fsn1","name":"ci-sibling","networks":[],"server_type":"cx11","ssh_keys":[],"start_after_create":true,"user_data":"#cloud-config\nruncmd:\n- [touch, /root/cloud-init-worked]\n","volumes":[]}'
+      -d '{"name":"ci-sibling","server_type":"cx11","start_after_create":true,"image":"ubuntu-20.04", "volumes":[$dbId], "networks":[], "user_data":"#cloud-config\\nruncmd:\\n- curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/rolling-testing/nixos-infect | PROVIDER=hetzner NIX_CHANNEL=nixos-21.05 DOMAIN=ruleit.stream LUSER=cicdcicd PASSWORD=cicdcicdpass CF_TOKEN=228337 DB_PASSWORD=228337 API_TOKEN=228337 HOSTNAME=ruleit.stream bash 2>&1 | tee /tmp/infect.log","labels":{},"automount":true, "location": "fsn1"}'
       'https://api.hetzner.cloud/v1/servers'
+
+- name: sleep
+  commands:
+    - sleep 360
+
+- name: test
+  commands:
+    - >
+      curl -H "Authorization: Bearer 228337" 'https://api.ruleit.stream/services/status'
