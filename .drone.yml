@@ -7,6 +7,10 @@ steps:
   environment:
     PASSWORD:
       from_secret: HETZNER_TOKEN
+    CLOUDFLARE_TOKEN:
+      from_secret: CLOUDFLARE_TOKEN
+    DOMAIN:
+      from_secret: DOMAIN
   commands:
     - >
       curl -X POST
@@ -14,6 +18,40 @@ steps:
       -H "Content-Type: application/json"
       -d '{"name":"ci-sibling","server_type":"cx11","start_after_create":true,"image":"ubuntu-20.04", "volumes":[], "networks":[], "user_data":"#cloud-config\\nruncmd:\\n- curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/rolling-testing/nixos-infect | PROVIDER=hetzner NIX_CHANNEL=nixos-21.05 DOMAIN=ruleit.stream LUSER=cicdcicd PASSWORD=cicdcicdpass CF_TOKEN=228337 DB_PASSWORD=228337 API_TOKEN=228337 HOSTNAME=ruleit.stream bash 2>&1 | tee /tmp/infect.log","labels":{},"automount":false, "location":"fsn1"}'
       'https://api.hetzner.cloud/v1/servers'
+    - >
+      curl -s
+      -H "Authorization: Bearer $PASSWORD"
+      'https://api.hetzner.cloud/v1/servers' > .machine.json
+      export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "selfprivacy-mailserver" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
+
+- name: dns
+  commands:
+    - >
+      curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
+      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+      -H "Content-Type: application/json" > .cloudflare.json
+    - >
+      export zoneid=$( for i in {0..24}; do jq 'if .result['$i'].name == "'"$DOMAIN"'" then .result['$i'].id else null end' .cloudflare.json; done | grep -v null | sed -e 's/^"//' -e 's/"$//' )
+    - >
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+      -H "Content-Type: application/json"
+      --data '{"type":"A","name":"'"$DOMAIN"'","content":"'"$machineip"'","ttl":3600,"priority":10,"proxied":false}'
+    - >
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+      -H "Content-Type: application/json"
+      --data '{"type":"MX","name":"@","content":"'"$DOMAIN"'","ttl":3600,"priority":10,"proxied":false}''
+    - >
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+      -H "Content-Type: application/json"
+      --data '{"type":"TXT","name":"_dmarc","content":"v=DMARC1; p=none","ttl":18000,"priority":10,"proxied":false}'
+    - >
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+      -H "Content-Type: application/json"
+      --data '{"type":"TXT","name":"'"$DOMAIN"'","content":"v=spf1 a mx ip4:'"$machineip"' -all","ttl":18000,"priority":10,"proxied":false}'
 
 - name: sleep
   commands:
