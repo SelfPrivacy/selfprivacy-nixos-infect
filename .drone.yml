@@ -35,6 +35,7 @@ steps:
       for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//'
 
   commands:
+  - echo $machineip
   - >
     curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
     -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
