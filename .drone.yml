@@ -11,6 +11,8 @@ steps:
       from_secret: CLOUDFLARE_TOKEN
     DOMAIN:
       from_secret: DOMAIN
+    ZONE_ID:
+      from_secret: ZONE_ID
   commands:
     - >
       curl -X POST
@@ -22,6 +24,7 @@ steps:
       curl -s
       -H "Authorization: Bearer $PASSWORD"
       'https://api.hetzner.cloud/v1/servers' > .machine.json
+    - >
       export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "selfprivacy-mailserver" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
 
 - name: dns
@@ -29,26 +32,24 @@ steps:
     - >
       curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
       -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-      -H "Content-Type: application/json" > .cloudflare.json
+      -H "Content-Type: application/json"
     - >
-      export zoneid=$( for i in {0..24}; do jq 'if .result['$i'].name == "'"$DOMAIN"'" then .result['$i'].id else null end' .cloudflare.json; done | grep -v null | sed -e 's/^"//' -e 's/"$//' )
-    - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
       -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
       -H "Content-Type: application/json"
       --data '{"type":"A","name":"'"$DOMAIN"'","content":"'"$machineip"'","ttl":3600,"priority":10,"proxied":false}'
     - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
       -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
       -H "Content-Type: application/json"
       --data '{"type":"MX","name":"@","content":"'"$DOMAIN"'","ttl":3600,"priority":10,"proxied":false}''
     - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
       -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
       -H "Content-Type: application/json"
       --data '{"type":"TXT","name":"_dmarc","content":"v=DMARC1; p=none","ttl":18000,"priority":10,"proxied":false}'
     - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$zoneid/dns_records"
+      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
       -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
       -H "Content-Type: application/json"
       --data '{"type":"TXT","name":"'"$DOMAIN"'","content":"v=spf1 a mx ip4:'"$machineip"' -all","ttl":18000,"priority":10,"proxied":false}'
