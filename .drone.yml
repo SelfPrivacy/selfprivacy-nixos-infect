@@ -24,8 +24,7 @@ steps:
       from_secret: HETZNER_TOKEN
     CLOUDFLARE_TOKEN:
       from_secret: CLOUDFLARE_TOKEN
-    DOMAIN:
-      from_secret: DOMAIN
+    DOMAIN: ruleit.stream
     ZONE_ID:
       from_secret: ZONE_ID
 
