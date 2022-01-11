@@ -47,7 +47,7 @@ steps:
     curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
     -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
     -H "Content-Type: application/json"
-    --data '{"type":"MX","name":"@","content":"$DOMAIN","ttl":3600,"priority":10,"proxied":false}'
+    --data '{"type":"MX","name":"@","content":"'"$$DOMAIN"'","ttl":3600,"priority":10,"proxied":false}'
   - >
     curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
     -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
@@ -57,7 +57,7 @@ steps:
     curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
     -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
     -H "Content-Type: application/json"
-    --data '{"type":"TXT","name":"$DOMAIN","content":"v=spf1 a mx ip4:'"${machineip}"' -all","ttl":18000,"priority":10,"proxied":false}'
+    --data '{"type":"TXT","name":"'"$$DOMAIN"'","content":"v=spf1 a mx ip4:"$$machineip" -all","ttl":18000,"priority":10,"proxied":false}'
 
 - name: sleep
   commands:
