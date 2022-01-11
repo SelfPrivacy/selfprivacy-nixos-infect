@@ -14,45 +14,45 @@ steps:
     ZONE_ID:
       from_secret: ZONE_ID
   commands:
-    - >
-      curl -X POST
-      -H "Authorization: Bearer $PASSWORD"
-      -H "Content-Type: application/json"
-      -d '{"name":"ci-sibling","server_type":"cx11","start_after_create":true,"image":"ubuntu-20.04", "volumes":[], "networks":[], "user_data":"#cloud-config\\nruncmd:\\n- curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/rolling-testing/nixos-infect | PROVIDER=hetzner NIX_CHANNEL=nixos-21.05 DOMAIN=ruleit.stream LUSER=cicdcicd PASSWORD=cicdcicdpass CF_TOKEN=228337 DB_PASSWORD=228337 API_TOKEN=228337 HOSTNAME=ruleit.stream bash 2>&1 | tee /tmp/infect.log","labels":{},"automount":false, "location":"fsn1"}'
-      'https://api.hetzner.cloud/v1/servers'
-    - >
-      curl -s
-      -H "Authorization: Bearer $PASSWORD"
-      'https://api.hetzner.cloud/v1/servers' > .machine.json
-    - >
-      export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "selfprivacy-mailserver" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
+  - >
+    curl -X POST
+    -H "Authorization: Bearer $PASSWORD"
+    -H "Content-Type: application/json"
+    -d '{"name":"ci-sibling","server_type":"cx11","start_after_create":true,"image":"ubuntu-20.04", "volumes":[], "networks":[], "user_data":"#cloud-config\\nruncmd:\\n- curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/rolling-testing/nixos-infect | PROVIDER=hetzner NIX_CHANNEL=nixos-21.05 DOMAIN=ruleit.stream LUSER=cicdcicd PASSWORD=cicdcicdpass CF_TOKEN=228337 DB_PASSWORD=228337 API_TOKEN=228337 HOSTNAME=ruleit.stream bash 2>&1 | tee /tmp/infect.log","labels":{},"automount":false, "location":"fsn1"}'
+    'https://api.hetzner.cloud/v1/servers'
+  - >
+    curl -s
+    -H "Authorization: Bearer $PASSWORD"
+    'https://api.hetzner.cloud/v1/servers' > .machine.json
+  - >
+    export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "selfprivacy-mailserver" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
 
 - name: dns
   commands:
-    - >
-      curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
-      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-      -H "Content-Type: application/json"
-    - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
-      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-      -H "Content-Type: application/json"
-      --data '{"type":"A","name":"'"$DOMAIN"'","content":"'"$machineip"'","ttl":3600,"priority":10,"proxied":false}'
-    - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
-      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-      -H "Content-Type: application/json"
-      --data '{"type":"MX","name":"@","content":"'"$DOMAIN"'","ttl":3600,"priority":10,"proxied":false}''
-    - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
-      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-      -H "Content-Type: application/json"
-      --data '{"type":"TXT","name":"_dmarc","content":"v=DMARC1; p=none","ttl":18000,"priority":10,"proxied":false}'
-    - >
-      curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
-      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-      -H "Content-Type: application/json"
-      --data '{"type":"TXT","name":"'"$DOMAIN"'","content":"v=spf1 a mx ip4:'"$machineip"' -all","ttl":18000,"priority":10,"proxied":false}'
+  - >
+    curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"A","name":"'"$DOMAIN"'","content":"'"$machineip"'","ttl":3600,"priority":10,"proxied":false}'
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"MX","name":"@","content":"'"$DOMAIN"'","ttl":3600,"priority":10,"proxied":false}''
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"TXT","name":"_dmarc","content":"v=DMARC1; p=none","ttl":18000,"priority":10,"proxied":false}'
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"TXT","name":"'"$DOMAIN"'","content":"v=spf1 a mx ip4:'"$machineip"' -all","ttl":18000,"priority":10,"proxied":false}'
 
 - name: sleep
   commands:
@@ -60,14 +60,14 @@ steps:
 
 - name: test
   commands:
-    - >
-      curl -H "Authorization: Bearer 228337" 'https://api.ruleit.stream/services/status'
-    - >
-      swaks --to ci@selfprivacy.org -s selfprivacy.org -tls -au test@ci.selfprivacy.org -ap 228337
-    - >
-      curl --user admin:228337 https://cloud.ruleit.stream/ocs/v2.php/apps/serverinfo/api/v1/info?format=json
-    - echo "blah-blah" > file
-    - >
-      curl -T file -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
-    - >
-      curl -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
+  - >
+    curl -H "Authorization: Bearer 228337" 'https://api.ruleit.stream/services/status'
+  - >
+    swaks --to ci@selfprivacy.org -s selfprivacy.org -tls -au test@ci.selfprivacy.org -ap 228337
+  - >
+    curl --user admin:228337 https://cloud.ruleit.stream/ocs/v2.php/apps/serverinfo/api/v1/info?format=json
+  - echo "blah-blah" > file
+  - >
+    curl -T file -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
+  - >
+    curl -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
