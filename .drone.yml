@@ -28,6 +28,15 @@ steps:
     export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "selfprivacy-mailserver" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
 
 - name: dns
+  environment:
+    PASSWORD:
+      from_secret: HETZNER_TOKEN
+    CLOUDFLARE_TOKEN:
+      from_secret: CLOUDFLARE_TOKEN
+    DOMAIN:
+      from_secret: DOMAIN
+    ZONE_ID:
+      from_secret: ZONE_ID
   commands:
   - >
     curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}"
