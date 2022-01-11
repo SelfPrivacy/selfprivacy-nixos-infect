@@ -30,8 +30,8 @@ steps:
 - name: dns
   commands:
   - >
-    curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
-    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}"
+    -H "Authorization: Bearer ${CLOUDFLARE_TOKEN}"
     -H "Content-Type: application/json"
   - >
     curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
