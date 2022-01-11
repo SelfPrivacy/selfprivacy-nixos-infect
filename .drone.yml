@@ -32,9 +32,8 @@ steps:
   commands:
   - >
     curl -s -H "Authorization: Bearer $PASSWORD" 'https://api.hetzner.cloud/v1/servers' > .machine.json
-  - cat .machine.json
   - >
-    for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//')
+    for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//'
   - >
     export machineip=$(cat .machine.json);
   - >
