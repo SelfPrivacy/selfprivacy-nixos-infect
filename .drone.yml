@@ -78,6 +78,14 @@ steps:
     curl -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
 
 - name: teardown
+  environment:
+    PASSWORD:
+      from_secret: HETZNER_TOKEN
+    CLOUDFLARE_TOKEN:
+      from_secret: CLOUDFLARE_TOKEN
+    DOMAIN: ruleit.stream
+    ZONE_ID:
+      from_secret: ZONE_ID
   commands:
     - >
       curl -s
