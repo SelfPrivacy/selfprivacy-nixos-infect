@@ -101,13 +101,13 @@ steps:
     - >
       for i in {0..24}
       do
-      jq '.result['$i'].id' .dns_records.json
+        jq '.result['$i'].id' .dns_records.json
       done | grep -v null | sed 's/"//g' > .records
     - export recordIDs=()
     - >
       while IFS= read -r line
       do
-      recordIDs+=("$line")
+        recordIDs+=("$line")
       done < .records
     - >
       for recordid in "${recordIDs[@]}"
