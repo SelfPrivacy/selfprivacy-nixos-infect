@@ -76,3 +76,38 @@ steps:
     curl -T file -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
   - >
     curl -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
+
+- name: teardown
+  commands:
+    - >
+      curl -s
+      -H "Authorization: Bearer $PASSWORD"
+      'https://api.hetzner.cloud/v1/servers' > .hetzner_servers.json
+    - export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+    - >
+      curl -s
+      -X DELETE
+      -H "Authorization: Bearer $PASSWORD"
+      https://api.hetzner.cloud/v1/servers/$machineid
+    - >
+      curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+      -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+      -H "Content-Type: application/json" > .dns_records.json
+    - >
+      for i in {0..24}
+      do
+      jq '.result['$i'].id' .dns_records.json
+      done | grep -v null | sed 's/"//g' > .records
+    - export recordIDs=()
+    - >
+      while IFS= read -r line
+      do
+      recordIDs+=("$line")
+      done < .records
+    - >
+      for recordid in "${recordIDs[@]}"
+      do
+        curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$recordid"
+        -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+        -H "Content-Type: application/json"
+      done
