@@ -105,7 +105,7 @@ steps:
       done | grep -v null | sed 's/"//g' > .records
     - export recordIDs=()
     - >
-      while IFS= read -r line
+      while IFS=read -r line
       do
         recordIDs+=("$line")
       done < .records
