@@ -68,7 +68,7 @@ steps:
   - >
     curl -H "Authorization: Bearer 228337" 'https://api.ruleit.stream/services/status'
   - >
-    swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap 228337
+    swaks --to ci@ruleit.stream -s selfprivacy.org -tls -au test@selfprivacy.org -ap 228337
   - >
     curl --user admin:228337 https://cloud.ruleit.stream/ocs/v2.php/apps/serverinfo/api/v1/info?format=json
   - echo "blah-blah" > file
