@@ -102,5 +102,6 @@ pipeline:
     username: ci
     password: 228337
     from: ci@selfprivacy.org
+    recipients: [ "admin@selfprivacy.org" ]
     when:
       status: [ success, failure ]
