@@ -105,3 +105,6 @@ pipeline:
     recipients: [ "admin@selfprivacy.org" ]
     when:
       status: [ success, failure ]
+
+  depends_on:
+  - default
