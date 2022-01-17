@@ -1,3 +1,5 @@
+[![Build Status](https://ci.selfprivacy.org/api/badges/SelfPrivacy/selfprivacy-nixos-infect/status.svg?ref=refs/heads/development)](https://ci.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect)
+
 This script - is a modded version of original [nixos-infect](https://github.com/elitak/nixos-infect). It have been revritten to suit needs of SelfPrivacy project. Except transforming your Ubuntu Linux system into NixOS GNU/Linux, it deploys standart services that SelfPrivacy offers to their customers.
 
 ## Source Distros
