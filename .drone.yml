@@ -94,16 +94,20 @@ steps:
     - >
       curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid"
       -H "Authorization: Bearer $PASSWORD"
-#---
-#pipeline:
-#  notify:
-#    image: drillster/drone-email
-#    host: selfprivacy.org
-#    username: ci
-#    password: 228337
-#    from: ci@selfprivacy.org
-#    recipients: [ "admin@selfprivacy.org" ]
-#    when:
-#      status: [ success, failure ]
-#  depends_on:
-#  - default
+---
+kind: pipeline
+type: docker
+name: notify
+
+steps:
+- name: notify
+  image: drillster/drone-email
+  host: selfprivacy.org
+  username: ci
+  password: 228337
+  from: ci@selfprivacy.org
+  recipients: [ "admin@selfprivacy.org" ]
+  when:
+    status: [ success, failure ]
+  depends_on:
+  - default
