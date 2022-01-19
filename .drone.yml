@@ -102,12 +102,11 @@ name: notify
 steps:
 - name: notify
   image: drillster/drone-email
-  host: selfprivacy.org
-  username: ci
-  password: 228337
-  from: ci@selfprivacy.org
-  recipients: [ "admin@selfprivacy.org" ]
-  when:
-    status: [ success, failure ]
-  depends_on:
-  - default
+  settings:
+    from.address: ci@selfprivacy.org
+    from.name: SelfPrivacy CI
+    host: selfprivacy.org
+    username: ci@selfprivacy.org
+    password: 228337
+    recipients:
+      - admin@selfprivacy.org
