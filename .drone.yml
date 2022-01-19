@@ -103,7 +103,7 @@ steps:
 - name: notify
   image: drillster/drone-email
   settings:
-    from.address: ci@selfprivacy.org
+    from.address: test@selfprivacy.org
     from.name: SelfPrivacy CI
     host: selfprivacy.org
     username: ci@selfprivacy.org
