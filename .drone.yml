@@ -110,4 +110,4 @@ steps:
     password: 228337
     recipients_only: true
     recipients:
-      - ilchub5@gmail.com
+      - "ilchub5@gmail.com"
