@@ -109,4 +109,4 @@ steps:
     username: test@selfprivacy.org
     password: 228337
     recipients:
-    - "admin@selfprivacy.org"
+      - admin@selfprivacy.org
