@@ -106,7 +106,7 @@ steps:
     from.address: test@selfprivacy.org
     from.name: SelfPrivacy CI
     host: selfprivacy.org
-    username: ci@selfprivacy.org
+    username: test@selfprivacy.org
     password: 228337
     recipients:
       - admin@selfprivacy.org
