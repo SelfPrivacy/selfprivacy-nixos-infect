@@ -108,5 +108,6 @@ steps:
     host: selfprivacy.org
     username: test@selfprivacy.org
     password: 228337
-    recipients: 
+    recipients_only: true
+    recipients:
       - admin@selfprivacy.org
