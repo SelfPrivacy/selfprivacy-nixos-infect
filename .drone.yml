@@ -110,4 +110,6 @@ steps:
     password: 228337
     recipients_only: true
     recipients:
-      - "ilchub5@gmail.com"
+      - "mail@ilchub.net"
+      - "illia.chub@selfprivacy.org"
+      - "admin@selfprivacy.org"
