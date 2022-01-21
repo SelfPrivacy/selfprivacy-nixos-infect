@@ -108,11 +108,10 @@ steps:
     host: selfprivacy.org
     username: test@selfprivacy.org
     password: 228337
-    recipients:
-      - mail@ilchub.net
-    recipients_only: true
     subject: Daily build results
     body: >
       [{{ build.status }}]
       {{ repo.owner }}/{{ repo.name }}
       ({{ build.branch }} - {{ truncate build.commit 8 }})
+  when:
+    status: [changed, failure]
