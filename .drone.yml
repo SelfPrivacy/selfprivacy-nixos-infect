@@ -114,4 +114,4 @@ steps:
       {{ repo.owner }}/{{ repo.name }}
       ({{ build.branch }} - {{ truncate build.commit 8 }})
   when:
-    status: [changed, failure]
+    status: [changed, failure, running]
