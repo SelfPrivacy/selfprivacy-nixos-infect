@@ -101,7 +101,7 @@ name: notify
 
 steps:
 - name: notify
-  image: drillster/drone-email
+  image: drillster/drone-email:latest
   settings:
     from.address: test@selfprivacy.org
     from.name: SelfPrivacy CI
