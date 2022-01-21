@@ -113,8 +113,8 @@ steps:
       [{{ build.status }}]
       {{ repo.owner }}/{{ repo.name }}
       ({{ build.branch }} - {{ truncate build.commit 8 }})
-    recipients_only: true
-    recipients:
-      - "mail@ilchub.net"
-      - "illia.chub@selfprivacy.org"
-      - "admin@selfprivacy.org"
+    #recipients_only: true
+    #recipients:
+    #  - "mail@ilchub.net"
+    #  - "illia.chub@selfprivacy.org"
+    #  - "admin@selfprivacy.org"
