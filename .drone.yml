@@ -108,6 +108,7 @@ steps:
     host: selfprivacy.org
     username: test@selfprivacy.org
     password: 228337
+    recipients_only: false
     subject: Daily build results
     body: >
       [{{ build.status }}]
