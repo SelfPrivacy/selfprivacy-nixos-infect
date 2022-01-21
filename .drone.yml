@@ -1,3 +1,5 @@
+# Notification test
+
 kind: pipeline
 type: exec
 name: default
