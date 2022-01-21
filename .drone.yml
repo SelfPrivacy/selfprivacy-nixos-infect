@@ -108,7 +108,7 @@ steps:
     host: selfprivacy.org
     username: test@selfprivacy.org
     password: 228337
-    recipients_file: "/var/recipients"
+    recipients_file: /var/recipients
     recipients_only: true
     subject: Daily build results
     body: >
