@@ -109,7 +109,7 @@ steps:
     username: test@selfprivacy.org
     password: 228337
     recipients_file: /var/recipients
-    recipients_only: true
+    recipients_only: false
     subject: Daily build results
     body: >
       [{{ build.status }}]
