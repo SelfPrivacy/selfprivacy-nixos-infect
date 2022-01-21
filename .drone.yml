@@ -95,6 +95,6 @@ steps:
       curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid"
       -H "Authorization: Bearer $PASSWORD"
 
-  - name: notify
-    commands:
-      - docker run --rm -e PLUGIN_FROM_ADDRESS=test@selfprivacy.org -e PLUGIN_FROM_NAME="SelfPrivacy CI" -e PLUGIN_HOST=selfprivacy.org -e PLUGIN_USERNAME=test@selfprivacy.org -e PLUGIN_PASSWORD=228337 -e DRONE_REPO_OWNER=SelfPrivacy -e DRONE_REPO_NAME=selfprivacy-nixos-infect -e DRONE_COMMIT_SHA=5253bb604c -e DRONE_COMMIT_BRANCH=development -e DRONE_COMMIT_AUTHOR=SelfPrivacy -e DRONE_COMMIT_AUTHOR_EMAIL=illia.chub@selfprivacy.org -v /etc/recipients:/etc/recipients -w $(pwd) drillster/drone-email
+- name: notify
+  commands:
+    - docker run --rm -e PLUGIN_FROM_ADDRESS=test@selfprivacy.org -e PLUGIN_FROM_NAME="SelfPrivacy CI" -e PLUGIN_HOST=selfprivacy.org -e PLUGIN_USERNAME=test@selfprivacy.org -e PLUGIN_PASSWORD=228337 -e DRONE_REPO_OWNER=SelfPrivacy -e DRONE_REPO_NAME=selfprivacy-nixos-infect -e DRONE_COMMIT_SHA=5253bb604c -e DRONE_COMMIT_BRANCH=development -e DRONE_COMMIT_AUTHOR=SelfPrivacy -e DRONE_COMMIT_AUTHOR_EMAIL=illia.chub@selfprivacy.org -v /etc/recipients:/etc/recipients -w $(pwd) drillster/drone-email
