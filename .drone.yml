@@ -76,6 +76,8 @@ steps:
     curl -T file -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
   - >
     curl -u admin:228337 https://cloud.ruleit.stream/remote.php/dav/files/admin/file
+  - >
+    curl https://password.ruleit.stream/admin/diagnostics
 
 - name: teardown
   environment:
