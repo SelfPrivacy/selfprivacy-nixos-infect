@@ -8,6 +8,10 @@ makeConf() {
   # Skip everything if main config already present
   [[ -e /etc/nixos/configuration.nix ]] && return 0
   # NB <<"EOF" quotes / $ ` in heredocs, <<EOF does not
+
+  if [[ $PASSWORD == null ]]; then
+      export PASSWORD=$(echo $ENCODED_PASSWORD | base64 --decode)
+
   mkdir -p /etc/nixos
 
   git clone https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-config.git /etc/nixos
