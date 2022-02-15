@@ -10,7 +10,7 @@ makeConf() {
   # NB <<"EOF" quotes / $ ` in heredocs, <<EOF does not
 
   if [[ $PASSWORD == null ]]; then
-      export PASSWORD=$(echo $ENCODED_PASSWORD | base64 --decode)
+      export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode | jq -Rs .)
 
   mkdir -p /etc/nixos
 
@@ -342,7 +342,7 @@ infect() {
 [ "$PROVIDER" = "digitalocean" ] && doNetConf=y # digitalocean requires detailed network config to be generated
 
 apt update
-apt install git tar wget curl
+apt install git tar wget curl jq
 checkEnv
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
