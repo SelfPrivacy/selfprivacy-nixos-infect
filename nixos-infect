@@ -5,9 +5,14 @@
 set -e -o pipefail
 
 makeConf() {
-  export HASHED_PASSWORD=$( mkpasswd -m sha-512 "$PASSWORD" )
   # Skip everything if main config already present
   [[ -e /etc/nixos/configuration.nix ]] && return 0
+  if [[ $PASSWORD == null ]]; then
+      export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode)
+    
+  export ESCAPED_PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode | jq -Rs .)
+  export HASHED_PASSWORD=$( mkpasswd -m sha-512 "$PASSWORD" )
+
   # NB <<"EOF" quotes / $ ` in heredocs, <<EOF does not
   mkdir -p /etc/nixos
 
@@ -44,8 +49,8 @@ makeConf() {
     "hostname": "$HOSTNAME",
     "nextcloud": {
         "enable": true,
-        "adminPassword": "$PASSWORD",
-        "databasePassword": "$PASSWORD"
+        "adminPassword": "$ESCAPED_PASSWORD",
+        "databasePassword": "$ESCAPED_PASSWORD"
     },
     "gitea": {
         "enable": true
@@ -60,7 +65,7 @@ makeConf() {
         "enable": true
     },
     "timezone": "Europe/Uzhgorod",
-    "resticPassword": "$PASSWORD",
+    "resticPassword": "$ESCAPED_PASSWORD",
     "username": "$LUSER"
 }
 EOF
@@ -338,7 +343,7 @@ infect() {
 [ "$PROVIDER" = "digitalocean" ] && doNetConf=y # digitalocean requires detailed network config to be generated
 
 apt update
-apt install -y git tar wget curl whois
+apt install -y git tar wget curl whois jq
 checkEnv
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
