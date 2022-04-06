@@ -9,6 +9,7 @@ makeConf() {
   [[ -e /etc/nixos/configuration.nix ]] && return 0
   if [[ $PASSWORD == null ]]; then
       export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode)
+  fi
     
   export ESCAPED_PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode | jq -Rs .)
   export HASHED_PASSWORD=$( mkpasswd -m sha-512 "$PASSWORD" )
