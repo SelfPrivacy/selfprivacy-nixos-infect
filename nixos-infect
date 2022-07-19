@@ -304,9 +304,8 @@ infect() {
   # shellcheck disable=SC1090
   source ~/.nix-profile/etc/profile.d/nix.sh
 
-  [[ -z "$NIX_CHANNEL" ]] && NIX_CHANNEL="nixos-21.05"
   nix-channel --remove nixpkgs
-  nix-channel --add "https://nixos.org/channels/$NIX_CHANNEL" nixos
+  nix-channel --add "https://channel.selfprivacy.org/nixos-selfpricacy" nixos
   nix-channel --update
 
   export NIXOS_CONFIG=/etc/nixos/configuration.nix
