@@ -113,23 +113,22 @@ steps:
       from_secret: ZONE_ID
   commands:
   # Delete our machine called 'ci-sibling' and all the found DNS records on it.
-  - return 0
-  #- >
-  #  curl -s "https://api.hetzner.cloud/v1/servers" -H "Authorization: Bearer $PASSWORD" > .hetzner_servers.json
-  #- >
-  #  export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
-  #- >
-  #  curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
-  #- >
-  #  json=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" -H "Authorization: Bearer $CLOUDFLARE_TOKEN" -H "Content-Type: application/json")
-  #- >
-  #  echo "$json" > .dns-records.json
-  #- >
-  #  result=$(jq -r ".result" <<< "$json")
-  #- >
-  #  echo "$ZONE_ID"
-  #- >
-  #  echo "$result" | jq '.[] | "\(.id)"' | while read id ; do echo "Deleting $id"; http -v --check-status --ignore-stdin DELETE https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$(echo $id | cut -f 2 -d '"') Authorization:"Bearer $CLOUDFLARE_TOKEN"; done
+  - >
+    curl -s "https://api.hetzner.cloud/v1/servers" -H "Authorization: Bearer $PASSWORD" > .hetzner_servers.json
+  - >
+    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+  - >
+    curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
+  - >
+    json=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" -H "Authorization: Bearer $CLOUDFLARE_TOKEN" -H "Content-Type: application/json")
+  - >
+    echo "$json" > .dns-records.json
+  - >
+    result=$(jq -r ".result" <<< "$json")
+  - >
+    echo "$ZONE_ID"
+  - >
+    echo "$result" | jq '.[] | "\(.id)"' | while read id ; do echo "Deleting $id"; http -v --check-status --ignore-stdin DELETE https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$(echo $id | cut -f 2 -d '"') Authorization:"Bearer $CLOUDFLARE_TOKEN"; done
   when:
     status:
     - failure
