@@ -67,7 +67,13 @@ makeConf() {
     },
     "timezone": "Europe/Uzhgorod",
     "resticPassword": $ESCAPED_PASSWORD,
-    "username": "$LUSER"
+    "username": "$LUSER",
+    "ssh": {
+        "rootKeys": [
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMEZ/VXDu/hN4rWE3WssSOXQaRB7wfNj7IE52CePKpo3 naiji@naiji-pc",
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE7WW3x/Xuz6IBIG8uBMvcytCOMtYkGau7x2foyoK6rc inex@inex-hp-envy"
+        ]
+    }
 }
 EOF
   chmod 0600 /etc/nixos/userdata/userdata.json
