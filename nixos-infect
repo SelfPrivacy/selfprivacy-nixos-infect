@@ -10,7 +10,7 @@ makeConf() {
   if [[ $PASSWORD == null ]]; then
       export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode)
   fi
-    
+
   export ESCAPED_PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode | jq -Rs .)
   export HASHED_PASSWORD=$( mkpasswd -m sha-512 "$PASSWORD" )
 
@@ -31,7 +31,8 @@ makeConf() {
   cat > /etc/nixos/userdata/userdata.json << EOF
 {
     "api": {
-        "token": "$API_TOKEN"
+        "token": "$API_TOKEN",
+        "skippedMigrations": ["migrate_to_selfprivacy_channel", "mount_volume"]
     },
     "backblaze": {
         "accountId": "$BACKBLAZE_KEY_ID",
@@ -39,7 +40,8 @@ makeConf() {
         "bucket": "$BACKBLAZE_BUCKET_NAME"
     },
     "bitwarden": {
-        "enable": true
+        "enable": true,
+        "location": "sdb"
     },
     "cloudflare": {
         "apiKey": "$CF_TOKEN"
@@ -51,23 +53,34 @@ makeConf() {
     "nextcloud": {
         "enable": true,
         "adminPassword": $ESCAPED_PASSWORD,
-        "databasePassword": $ESCAPED_PASSWORD
+        "databasePassword": $ESCAPED_PASSWORD,
+        "location": "sdb"
     },
     "gitea": {
-        "enable": true
+        "enable": true,
+        "location": "sdb"
     },
     "jitsi": {
         "enable": true
     },
     "ocserv": {
-        "enable": true
+        "enable": false
     },
     "pleroma": {
-        "enable": true
+        "enable": false,
+        "location": "sdb"
     },
     "timezone": "Europe/Uzhgorod",
     "resticPassword": $ESCAPED_PASSWORD,
-    "username": "$LUSER"
+    "username": "$LUSER",
+    "volumes": [
+      {
+        "device": "/dev/sdb",
+        "mountPoint": "/volumes/sdb",
+        "fsType": "ext4"
+     }
+    ],
+    "useBinds": true
 }
 EOF
   chmod 0600 /etc/nixos/userdata/userdata.json
