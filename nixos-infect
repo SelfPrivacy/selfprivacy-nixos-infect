@@ -27,6 +27,7 @@ makeConf() {
       && break
   done
   local network_import=""
+  [[ -n "$doNetConf" ]] && network_import="./networking.nix # generated at runtime by nixos-infect"
 
   cat > /etc/nixos/userdata/userdata.json << EOF
 {
@@ -34,7 +35,8 @@ makeConf() {
         "token": "$API_TOKEN",
         "skippedMigrations": ["migrate_to_selfprivacy_channel", "mount_volume"]
     },
-    "backblaze": {
+    "backup": {
+        "provider": "BACKBLAZE",
         "accountId": "$BACKBLAZE_KEY_ID",
         "accountKey": "$BACKBLAZE_ACCOUNT_KEY",
         "bucket": "$BACKBLAZE_BUCKET_NAME"
@@ -43,8 +45,12 @@ makeConf() {
         "enable": true,
         "location": "sdb"
     },
-    "cloudflare": {
+    "dns": {
+        "provider": "CLOUDFLARE",
         "apiKey": "$CF_TOKEN"
+    },
+    "server": {
+        "provider": "DIGITALOCEAN",
     },
     "databasePassword": "$DB_PASSWORD",
     "domain": "$DOMAIN",
@@ -106,7 +112,10 @@ EOF
   cat > /etc/nixos/hardware-configuration.nix << EOF
 { modulesPath, ... }:
 {
-  imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
+  imports = [
+    (modulesPath + "/profiles/qemu-guest.nix")
+    $network_import
+  ];
 $bootcfg
   boot.initrd.kernelModules = [ "nvme" ];
   fileSystems."/" = { device = "$rootfsdev"; fsType = "$rootfstype"; };
