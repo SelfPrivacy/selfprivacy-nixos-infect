@@ -50,7 +50,7 @@ makeConf() {
         "apiKey": "$CF_TOKEN"
     },
     "server": {
-        "provider": "DIGITALOCEAN",
+        "provider": "DIGITALOCEAN"
     },
     "databasePassword": "$DB_PASSWORD",
     "domain": "$DOMAIN",
