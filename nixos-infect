@@ -80,11 +80,6 @@ makeConf() {
     "resticPassword": $ESCAPED_PASSWORD,
     "username": "$LUSER",
     "volumes": [
-      {
-        "device": "/dev/sdb",
-        "mountPoint": "/volumes/sdb",
-        "fsType": "ext4"
-     }
     ],
     "useBinds": true
 }
