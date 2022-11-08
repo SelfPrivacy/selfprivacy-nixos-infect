@@ -43,7 +43,7 @@ makeConf() {
     },
     "bitwarden": {
         "enable": true,
-        "location": "sdb"
+        "location": "sda"
     },
     "dns": {
         "provider": "CLOUDFLARE",
@@ -60,11 +60,11 @@ makeConf() {
         "enable": true,
         "adminPassword": $ESCAPED_PASSWORD,
         "databasePassword": $ESCAPED_PASSWORD,
-        "location": "sdb"
+        "location": "sda"
     },
     "gitea": {
         "enable": true,
-        "location": "sdb"
+        "location": "sda"
     },
     "jitsi": {
         "enable": true
@@ -74,7 +74,7 @@ makeConf() {
     },
     "pleroma": {
         "enable": false,
-        "location": "sdb"
+        "location": "sda"
     },
     "timezone": "Europe/Uzhgorod",
     "resticPassword": $ESCAPED_PASSWORD,
