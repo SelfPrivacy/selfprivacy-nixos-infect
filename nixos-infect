@@ -11,12 +11,16 @@ makeConf() {
       export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode)
   fi
 
+  if [[ $STAGING_ACME == null ]]; then
+      export STAGING_ACME='false'
+  fi
+
   export ESCAPED_PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode | jq -Rs .)
   export HASHED_PASSWORD=$( mkpasswd -m sha-512 "$PASSWORD" )
 
   # NB <<"EOF" quotes / $ ` in heredocs, <<EOF does not
   mkdir -p /etc/nixos
-   
+
    git clone https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-config.git -b please-dont-merge /etc/nixos
 #  git clone https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-config.git /etc/nixos
 
@@ -35,7 +39,8 @@ makeConf() {
         "token": "$API_TOKEN",
         "skippedMigrations": ["migrate_to_selfprivacy_channel", "mount_volume"]
     },
-    "backblaze": {
+    "backup": {
+        "provider": "BACKBLAZE",
         "accountId": "$BACKBLAZE_KEY_ID",
         "accountKey": "$BACKBLAZE_ACCOUNT_KEY",
         "bucket": "$BACKBLAZE_BUCKET_NAME"
@@ -44,8 +49,13 @@ makeConf() {
         "enable": true,
         "location": "sdb"
     },
-    "cloudflare": {
+    "dns": {
+        "provider": "CLOUDFLARE",
         "apiKey": "$CF_TOKEN"
+        "useStagingACME": $STAGING_ACME
+    },
+    "server": {
+        "provider": "HETZNER",
     },
     "databasePassword": "$DB_PASSWORD",
     "domain": "$DOMAIN",
