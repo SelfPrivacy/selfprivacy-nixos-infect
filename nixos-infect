@@ -57,7 +57,7 @@ makeConf() {
         "useStagingACME": $STAGING_ACME
     },
     "server": {
-        "provider": "HETZNER",
+        "provider": "HETZNER"
     },
     "databasePassword": "$DB_PASSWORD",
     "domain": "$DOMAIN",
