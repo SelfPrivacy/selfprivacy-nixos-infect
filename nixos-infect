@@ -22,7 +22,7 @@ makeConf() {
   mkdir -p /etc/nixos
 
 
-  git clone -b api-redis https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-config.git /etc/nixos
+  git clone -b pleasedontmerge https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-config.git /etc/nixos
 
 #  git clone https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-config.git /etc/nixos
 
