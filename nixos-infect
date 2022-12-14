@@ -135,8 +135,8 @@ EOF
 
   readarray nameservers < <(grep ^nameserver /etc/resolv.conf | sed -r \
     -e 's/^nameserver[[:space:]]+([0-9.a-fA-F:]+).*/"\1"/' \
-    -e 's/127[0-9.]+/8.8.8.8/' \
-    -e 's/::1/8.8.8.8/' )
+    -e 's/127[0-9.]+/9.9.9.9/' \
+    -e 's/::1/9.9.9.9/' )
 
   if [[ "$eth0_name" = eth* ]]; then
     predictable_inames="usePredictableInterfaceNames = lib.mkForce false;"
