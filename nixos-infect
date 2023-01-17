@@ -11,6 +11,10 @@ makeConf() {
       export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode)
   fi
 
+  if [[ $DNS_PROVIDER_TYPE == null ]]; then
+      export DNS_PROVIDER_TYPE='CLOUDFLARE'
+  fi
+
   if [[ $STAGING_ACME == null ]]; then
       export STAGING_ACME='false'
   fi
@@ -52,7 +56,7 @@ makeConf() {
         "location": "sdb"
     },
     "dns": {
-        "provider": "CLOUDFLARE",
+        "provider": "$DNS_PROVIDER_TYPE",
         "apiKey": "$CF_TOKEN",
         "useStagingACME": $STAGING_ACME
     },
