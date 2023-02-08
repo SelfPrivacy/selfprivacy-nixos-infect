@@ -7,15 +7,15 @@ set -e -o pipefail
 makeConf() {
   # Skip everything if main config already present
   [[ -e /etc/nixos/configuration.nix ]] && return 0
-  if [[ $PASSWORD == null ]]; then
+  if [[ -z $PASSWORD ]]; then
       export PASSWORD=$(printf $ENCODED_PASSWORD | base64 --decode)
   fi
 
-  if [[ $DNS_PROVIDER_TYPE == null ]]; then
+  if [[ -z $DNS_PROVIDER_TYPE ]]; then
       export DNS_PROVIDER_TYPE='CLOUDFLARE'
   fi
 
-  if [[ $STAGING_ACME == null ]]; then
+  if [[ -z $STAGING_ACME ]]; then
       export STAGING_ACME='false'
   fi
 
