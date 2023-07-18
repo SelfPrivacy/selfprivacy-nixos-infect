@@ -95,7 +95,14 @@ makeConf() {
         "fsType": "ext4"
      }
     ],
-    "useBinds": true
+    "useBinds": true,
+    "ssh": {
+        "rootKeys": [
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICQmWNN9YccQecQUOB0n4jYH76gEgSAs4d66eFUZoobt inex@inex-pc",
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMNkUTqKof4lWaddRzsrQz+huo4BLJc/2EGmIqieqJbP naiji@laptop",
+            "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIFuVzlSfuZREjXQmQgOat+NlFrCUhfjioAIfs6DQzhc+AAAABHNzaDo= yubi-A"
+        ]
+    }
 }
 EOF
   chmod 0600 /etc/nixos/userdata/userdata.json
