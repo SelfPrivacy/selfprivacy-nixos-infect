@@ -297,7 +297,9 @@ infect() {
   # source ~/.nix-profile/etc/profile.d/nix.sh
 
   cd ${LOCAL_FLAKE_DIR}
-  /root/.nix-profile/bin/nix flake lock --update-input sp-modules
+  /root/.nix-profile/bin/nix flake lock \
+  --extra-experimental-features "nix-command flakes" \
+  --update-input sp-modules
 
   echo "nix build the configuration flake..."
   if ! /root/.nix-profile/bin/nix build \
