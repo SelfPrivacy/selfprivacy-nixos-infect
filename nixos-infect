@@ -16,7 +16,6 @@
 : "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${NIXOS_CONFIG_NAME:?NIXOS_CONFIG_NAME variable is not set}"
-: "${SUDO_USER:?SUDO_USER variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
 
 readonly LOCAL_FLAKE_DIR="/etc/nixos"
