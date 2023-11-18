@@ -263,7 +263,8 @@ installNix() {
   fi
 
   echo "Running nix installer..."
-  if $SHELL "${tmpNixInstall}" --daemon; then
+  if $SHELL "${tmpNixInstall}" \
+    --daemon --no-channel-add --daemon-user-count 4; then
       echo "Nix is installed"
       rm "${tmpNixInstall}"
   else
@@ -294,6 +295,9 @@ infect() {
   # shellcheck disable=SC1090
   # is it needed?
   # source ~/.nix-profile/etc/profile.d/nix.sh
+
+  cd ${LOCAL_FLAKE_DIR}
+  /root/.nix-profile/bin/nix flake lock --update-input sp-modules
 
   echo "nix build the configuration flake..."
   if ! /root/.nix-profile/bin/nix build \
