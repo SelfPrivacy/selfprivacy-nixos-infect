@@ -39,7 +39,7 @@ genUserdata() {
     "domain": "DOMAIN",
     "hashedMasterPassword": "$HASHED_PASSWORD",
     "hostname": "HOSTNAME",
-    "username": "$LADMIN"
+    "username": "$LUSER"
 }
 EOF
 )
