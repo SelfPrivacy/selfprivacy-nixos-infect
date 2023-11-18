@@ -337,7 +337,7 @@ infect() {
   fi
 
   echo "make configuration boot by default..."
-  if /nix/var/nix/profiles/system/bin/switch-to-configuration boot; then
+  if ! /nix/var/nix/profiles/system/bin/switch-to-configuration boot; then
       echo "Failed!"; exit 1
   fi
 }
