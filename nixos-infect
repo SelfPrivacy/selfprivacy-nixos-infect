@@ -263,7 +263,7 @@ installNix() {
   fi
 
   echo "Running nix installer..."
-  if $SHELL "${tmpNixInstall}"; then
+  if $SHELL "${tmpNixInstall}" --daemon; then
       echo "Nix is installed"
       rm "${tmpNixInstall}"
   else
@@ -348,9 +348,6 @@ set -o nounset
 set -o xtrace
 set -o errexit
 
-add-apt-repository --remove multiverse
-add-apt-repository --remove universe
-add-apt-repository --remove restricted
 apt update
 apt install -y git tar wget curl jq
 checkEnv
