@@ -31,7 +31,7 @@ genUserdata() {
 {
     "dns": {
         "provider": "$DNS_PROVIDER_TYPE",
-        "useStagingACME": "$STAGING_ACME"
+        "useStagingACME": $STAGING_ACME
     },
     "server": {
         "provider": "$PROVIDER"
