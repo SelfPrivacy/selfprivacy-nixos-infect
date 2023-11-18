@@ -348,7 +348,7 @@ set -o xtrace
 set -o errexit
 
 apt update
-apt install -y git tar wget curl jq
+apt install -y git tar curl jq
 checkEnv
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
