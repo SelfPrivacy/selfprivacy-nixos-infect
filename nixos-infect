@@ -356,6 +356,6 @@ setupConf
 infect
 removeSwap
 
-if [[ -z "$NO_REBOOT" ]]; then
+if [[ -z "${NO_REBOOT+x}" ]]; then
   reboot
 fi
