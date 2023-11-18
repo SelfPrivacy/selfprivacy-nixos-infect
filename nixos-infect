@@ -311,17 +311,8 @@ infect() {
       exit 1
   fi
 
+  # remove original OS stuff
   rm -v -rf /etc/{dbus-1,terminfo,systemd}
-
-  echo "activate the built configuration..."
-  if ! /nix/var/nix/profiles/system/activate; then
-      echo "Failed!"; exit 1
-  fi
-
-  echo "make configuration switch..."
-  if /nix/var/nix/profiles/system/bin/switch-to-configuration switch; then
-      echo "Failed!"; exit 1
-  fi
 
   # Remove nix installed by the "install" script.
   rm -fv /nix/var/nix/profiles/default*
