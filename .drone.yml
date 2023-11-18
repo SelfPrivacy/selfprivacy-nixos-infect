@@ -22,7 +22,7 @@ steps:
   - echo 'echo "Hello, NetCat!"' >> infect.sh
   - echo "curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/$DRONE_SOURCE_BRANCH/nixos-infect | PROVIDER=hetzner DOMAIN=$DOMAIN LUSER=cicdcicd ENCODED_PASSWORD=\"$(printf $USER_PASS | base64)\" CF_TOKEN=$CLOUDFLARE_TOKEN DB_PASSWORD=$USER_PASS API_TOKEN=$USER_PASS HOSTNAME=selfprivacy-ci-test DNS_PROVIDER_TYPE=CLOUDFLARE STAGING_ACME=false NIX_VERSION=2.18.1 NIXOS_CONFIG_NAME=sp-nixos CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/alexoundos/selfprivacy-nixos-top-level/archive/master.tar.gz bash 2>&1 | tee /root/infect.log" >> infect.sh
   - echo 'cat /etc/nixos/hardware-configuration.nix' >> infect.sh
-  - http -v --check-status --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling2 server_type=cx11 start_after_create:=true image=ubuntu-20.04 user_data=@infect.sh automount:=false location=fsn1
+  - http -v --check-status --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 user_data=@infect.sh automount:=false location=fsn1
 
 - name: dns
   environment:
@@ -36,12 +36,12 @@ steps:
       from_secret: ZONE_ID
 
   commands:
-  # Read all available machines and export IP of 'ci-sibling2'
+  # Read all available machines and export IP of 'ci-sibling'
   # Create DNS entires for main domain and subdomains
   - >
     curl -s -H "Authorization: Bearer $PASSWORD" 'https://api.hetzner.cloud/v1/servers' > .machine.json
   - >
-    export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling2" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
+    export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
   - echo $machineip
   - >
     curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
@@ -115,11 +115,11 @@ steps:
     ZONE_ID:
       from_secret: ZONE_ID
   commands:
-  # Delete our machine called 'ci-sibling2' and all the found DNS records on it.
+  # Delete our machine called 'ci-sibling' and all the found DNS records on it.
   - >
     curl -s "https://api.hetzner.cloud/v1/servers" -H "Authorization: Bearer $PASSWORD" > .hetzner_servers.json
   - >
-    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling2" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
   - >
     curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
   - >
