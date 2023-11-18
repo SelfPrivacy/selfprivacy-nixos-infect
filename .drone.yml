@@ -35,7 +35,7 @@ steps:
       from_secret: ZONE_ID
 
   commands:
-  # Read all available machines and export IP of 'ci-sibling' 
+  # Read all available machines and export IP of 'ci-sibling'
   # Create DNS entires for main domain and subdomains
   - >
     curl -s -H "Authorization: Bearer $PASSWORD" 'https://api.hetzner.cloud/v1/servers' > .machine.json
@@ -45,7 +45,7 @@ steps:
   - >
     curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
     -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
-    -H "Content-Type: application/json" 
+    -H "Content-Type: application/json"
   - >
     curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
     -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
@@ -119,6 +119,18 @@ steps:
     curl -s "https://api.hetzner.cloud/v1/servers" -H "Authorization: Bearer $PASSWORD" > .hetzner_servers.json
   - >
     export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+  - >
+    curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
+  - >
+    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling2" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+  - >
+    curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
+  - >
+    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling3" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+  - >
+    curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
+  - >
+    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling4" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
   - >
     curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
   - >
