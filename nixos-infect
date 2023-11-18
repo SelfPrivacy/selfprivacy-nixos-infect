@@ -296,8 +296,7 @@ infect() {
   # is it needed?
   # source ~/.nix-profile/etc/profile.d/nix.sh
 
-  cd ${LOCAL_FLAKE_DIR}
-  /root/.nix-profile/bin/nix flake lock \
+  /root/.nix-profile/bin/nix flake lock ${LOCAL_FLAKE_DIR} \
   --extra-experimental-features "nix-command flakes" \
   --update-input sp-modules
 
