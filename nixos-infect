@@ -36,9 +36,9 @@ genUserdata() {
     "server": {
         "provider": "$PROVIDER"
     },
-    "domain": "DOMAIN",
+    "domain": "$DOMAIN",
     "hashedMasterPassword": "$HASHED_PASSWORD",
-    "hostname": "HOSTNAME",
+    "hostname": "$HOSTNAME",
     "username": "$LUSER"
 }
 EOF
