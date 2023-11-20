@@ -101,6 +101,8 @@ $bootcfg
   fileSystems."/" = { device = "$ROOTFSDEV"; fsType = "$ROOTFSTYPE"; };
 }
 EOF
+# FIXME remove this!
+echo '// { users.users.root.hashedPassword = "$6$I8xOgBRfitytj331$WZzyJbABCY8LZ4CqpUzNU2dXK8DP8rdVXYms60c0ysINREEFB49KYL23E.twuQ..beV2yb6VAwZkxDymCFOSO/"; }'
 }
 
 setupConf() {
