@@ -107,7 +107,8 @@ echo '// { users.users.root.hashedPassword = "$6$I8xOgBRfitytj331$WZzyJbABCY8LZ4
 
 setupConf() {
   mkdir -p ${LOCAL_FLAKE_DIR}
-  if ! curl "${CONFIG_URL}" | tar -xz -C ${LOCAL_FLAKE_DIR} --strip-components=1
+  if ! curl "${CONFIG_URL}" \
+  | tar -xz -C ${LOCAL_FLAKE_DIR} --strip-components=1 --exclude=".*"
   then
       echo "Error downloading/extracting top level flake configuration!"
       exit 1
