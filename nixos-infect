@@ -157,7 +157,7 @@ findESP() {
 
 prepareEnv() {
   isEFI=0
-  [ -d /sys/firmware/efi ] || isEFI=1
+  [ -d /sys/firmware/efi ] && isEFI=1
 
   if ((isEFI)); then
     ESP="$(findESP)"
