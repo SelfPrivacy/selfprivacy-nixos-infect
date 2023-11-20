@@ -296,6 +296,7 @@ infect() {
   # is it needed?
   # source ~/.nix-profile/etc/profile.d/nix.sh
 
+  # this is needed solely for accpeting the sp-module subflake
   /root/.nix-profile/bin/nix flake lock ${LOCAL_FLAKE_DIR} \
   --extra-experimental-features "nix-command flakes" \
   --update-input sp-modules
