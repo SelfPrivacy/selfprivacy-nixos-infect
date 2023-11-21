@@ -296,10 +296,6 @@ infect() {
       exit 1
   fi
 
-  # Remove nix installed by the "install" script.
-  rm -fv /nix/var/nix/profiles/default*
-  /nix/var/nix/profiles/system/sw/bin/nix-collect-garbage
-
   # Reify resolv.conf (???)
   [[ -L /etc/resolv.conf ]] && mv -v /etc/resolv.conf /etc/resolv.conf.lnk && cat /etc/resolv.conf.lnk > /etc/resolv.conf
 
@@ -322,6 +318,10 @@ infect() {
   if ! /nix/var/nix/profiles/system/bin/switch-to-configuration boot; then
       echo "Failed!"; exit 1
   fi
+
+  # Remove nix installed by the "install" script.
+  rm -fv /nix/var/nix/profiles/default*
+  /nix/var/nix/profiles/system/sw/bin/nix-collect-garbage
 }
 
 set -o pipefail
