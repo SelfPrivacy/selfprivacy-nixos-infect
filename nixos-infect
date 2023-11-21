@@ -281,10 +281,6 @@ infect() {
       exit 1
   fi
 
-  # shellcheck disable=SC1090
-  # is it needed?
-  # source ~/.nix-profile/etc/profile.d/nix.sh
-
   # this is needed solely for accpeting the sp-module subflake
   /root/.nix-profile/bin/nix flake lock ${LOCAL_FLAKE_DIR} \
   --extra-experimental-features "nix-command flakes" \
@@ -299,9 +295,6 @@ infect() {
       echo "Failed!"
       exit 1
   fi
-
-  # remove original OS stuff
-  rm -v -rf /etc/{dbus-1,terminfo,systemd}
 
   # Remove nix installed by the "install" script.
   rm -fv /nix/var/nix/profiles/default*
