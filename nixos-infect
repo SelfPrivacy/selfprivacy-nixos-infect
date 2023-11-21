@@ -305,8 +305,9 @@ infect() {
 
   # Stage the Nix coup d'état
   touch /etc/NIXOS
-  echo etc/nixos        > /etc/NIXOS_LUSTRATE
-  echo etc/resolv.conf >> /etc/NIXOS_LUSTRATE
+  echo etc/nixos            > /etc/NIXOS_LUSTRATE
+  echo etc/resolv.conf     >> /etc/NIXOS_LUSTRATE
+  echo ${SECRETS_FILEPATH} >> /etc/NIXOS_LUSTRATE
 
   rm -rf /boot.bak
   ((isEFI)) && umount "$ESP"
