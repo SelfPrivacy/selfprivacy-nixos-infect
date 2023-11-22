@@ -65,7 +65,7 @@ genSecrets() {
     "modules": {
         "nextcloud": {
             "adminPassword": $ESCAPED_PASSWORD,
-            "databasePassword": $ESCAPED_PASSWORD,
+            "databasePassword": $ESCAPED_PASSWORD
         }
     },
     "resticPassword": $ESCAPED_PASSWORD
