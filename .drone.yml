@@ -89,7 +89,7 @@ steps:
   - >
     http -v --verify=false --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
   - >
-    swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS
+    swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
   - >
     http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -a admin:$USER_PASS
   - >
