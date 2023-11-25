@@ -73,7 +73,7 @@ steps:
 
 - name: sleep
   commands:
-    - sleep 420
+    - sleep 600
 
 - name: test
   environment:
