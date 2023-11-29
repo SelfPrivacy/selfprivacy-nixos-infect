@@ -18,7 +18,7 @@ steps:
   commands:
   # Create infect user script and then push it to a remote machine on server creation.
   - echo '#! /usr/bin/env bash' > infect.sh
-  - echo "curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/$INFECT_SOURCE_BRANCH/nixos-infect | PROVIDER=hetzner DOMAIN=$DOMAIN LUSER=cicdcicd ENCODED_PASSWORD=\"$(printf $USER_PASS | base64)\" CF_TOKEN=$CLOUDFLARE_TOKEN DB_PASSWORD=$USER_PASS API_TOKEN=$USER_PASS HOSTNAME=selfprivacy-ci-test DNS_PROVIDER_TYPE=CLOUDFLARE STAGING_ACME=false NIX_VERSION=2.18.1 NIXOS_CONFIG_NAME=sp-nixos CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz bash 2>&1 | tee /root/infect.log" >> infect.sh
+  - echo "curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/$INFECT_SOURCE_BRANCH/nixos-infect | PROVIDER=hetzner DOMAIN=$DOMAIN LUSER=cicdcicd USER_PASS=\"$USER_PASS\" CF_TOKEN=$CLOUDFLARE_TOKEN DB_PASSWORD=\"$USER_PASS\" API_TOKEN=\"$USER_PASS\" HOSTNAME=selfprivacy-ci-test DNS_PROVIDER_TYPE=CLOUDFLARE STAGING_ACME=true NIX_VERSION=2.18.1 NIXOS_CONFIG_NAME=sp-nixos CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz bash 2>&1 | tee /root/infect.log" >> infect.sh
   - http -v --check-status --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 user_data=@infect.sh automount:=false location=fsn1
 
 - name: dns

@@ -13,7 +13,7 @@
 : "${STAGING_ACME:?STAGING_ACME variable is not set}"
 : "${CF_TOKEN:?CF_TOKEN variable is not set}"
 : "${DB_PASSWORD:?DB_PASSWORD variable is not set}"
-: "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
+: "${USER_PASS:?USER_PASS variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${NIXOS_CONFIG_NAME:?NIXOS_CONFIG_NAME variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
@@ -23,9 +23,8 @@ readonly SECRETS_FILEPATH="/etc/selfprivacy/secrets.json"
 
 # Merge original userdata.json with deployment specific fields and print result.
 genUserdata() {
-  local password HASHED_PASSWORD userdata_infect
-  password=$(printf "%s" "$ENCODED_PASSWORD" | base64 --decode)
-  HASHED_PASSWORD=$(mkpasswd -m sha-512 "$password")
+  local HASHED_PASSWORD userdata_infect
+  HASHED_PASSWORD="$(mkpasswd -m sha-512 "$USER_PASS")"
 
   userdata_infect=$(cat << EOF
 {
@@ -49,9 +48,6 @@ EOF
 }
 
 genSecrets() {
-  local ESCAPED_PASSWORD
-  ESCAPED_PASSWORD=$(printf "%s" "$ENCODED_PASSWORD" | base64 --decode | jq -Rs .)
-
   cat << EOF
 {
     "api": {
@@ -64,11 +60,11 @@ genSecrets() {
     },
     "modules": {
         "nextcloud": {
-            "adminPassword": $ESCAPED_PASSWORD,
-            "databasePassword": $ESCAPED_PASSWORD
+            "adminPassword": "$USER_PASS",
+            "databasePassword": "$USER_PASS"
         }
     },
-    "resticPassword": $ESCAPED_PASSWORD
+    "resticPassword": "$USER_PASS"
 }
 EOF
 }
