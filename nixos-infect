@@ -277,7 +277,7 @@ infect() {
       exit 1
   fi
 
-  # this is needed solely for accpeting the sp-module subflake
+  # this is needed solely for accepting the sp-module subflake
   # see https://github.com/NixOS/nix/issues/3978#issuecomment-952418478
   /root/.nix-profile/bin/nix flake lock ${LOCAL_FLAKE_DIR} \
   --extra-experimental-features "nix-command flakes" \
