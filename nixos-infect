@@ -17,9 +17,16 @@
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${NIXOS_CONFIG_NAME:?NIXOS_CONFIG_NAME variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
+: "${SSH_AUTHORIZED_KEY:=}"
 
 readonly LOCAL_FLAKE_DIR="/etc/nixos"
 readonly SECRETS_FILEPATH="/etc/selfprivacy/secrets.json"
+
+genOptionalSsh() {
+  [ -n "${SSH_AUTHORIZED_KEY}" ] && cat << EOF
+"ssh": { "rootKeys": [ "${SSH_AUTHORIZED_KEY}" ] },
+EOF
+}
 
 # Merge original userdata.json with deployment specific fields and print result.
 genUserdata() {
@@ -28,6 +35,7 @@ genUserdata() {
 
   userdata_infect=$(cat << EOF
 {
+    $(genOptionalSsh)
     "dns": {
         "provider": "$DNS_PROVIDER_TYPE",
         "useStagingACME": $STAGING_ACME
