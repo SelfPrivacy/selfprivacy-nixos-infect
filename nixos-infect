@@ -96,6 +96,17 @@ EOF
 )
   fi
 
+  local NIX="/root/.nix-profile/bin/nix"
+  local NIX_OPTS=(--extra-experimental-features nix-command)
+  local currentSystem
+  if ! currentSystem="$($NIX "${NIX_OPTS[@]}" eval --impure --raw --expr builtins.currentSystem)"
+  then
+      echo "cannot determine Nix currentSystem identifier"
+      return 1
+  fi
+
+  # TODO try nixos-generate-config first, resorting to the way below if failed
+
   cat << EOF
 { modulesPath, ... }:
 {
@@ -103,6 +114,28 @@ EOF
 $bootcfg
   boot.initrd.kernelModules = [ "nvme" ];
   fileSystems."/" = { device = "$ROOTFSDEV"; fsType = "$ROOTFSTYPE"; };
+  nixpkgs.hostPlatform = "${currentSystem}";
+}
+EOF
+}
+
+genDeploymentConfiguration() {
+  local NIX="/root/.nix-profile/bin/nix"
+  local NIX_OPTS=(--extra-experimental-features "nix-command flakes")
+  local release
+
+  if ! release="$($NIX "${NIX_OPTS[@]}" eval --impure --raw --expr "(builtins.getFlake (builtins.toString ${LOCAL_FLAKE_DIR})).inputs.selfprivacy-nixos-config.inputs.nixpkgs.lib.trivial.release")"
+  then
+      echo "cannot determine NixOS release version"
+      return 1
+  fi
+
+  cat << EOF
+{
+  # The content below is static and belongs to this deployment only!
+  # Do not copy this configuration file to another NixOS installation!
+
+  system.stateVersion = "$release";
 }
 EOF
 }
@@ -117,7 +150,18 @@ setupConf() {
   fi
 
   # generate and write hardware-configuration.nix
-  genHardwareConfiguration > ${LOCAL_FLAKE_DIR}/hardware-configuration.nix
+  if ! genHardwareConfiguration > ${LOCAL_FLAKE_DIR}/hardware-configuration.nix
+  then
+      echo "error generating ${LOCAL_FLAKE_DIR}/hardware-configuration.nix"
+      exit 1
+  fi
+
+  # generate and write deployment.nix
+  if ! genDeploymentConfiguration > ${LOCAL_FLAKE_DIR}/deployment.nix
+  then
+      echo "error generating ${LOCAL_FLAKE_DIR}/deployment.nix"
+      exit 1
+  fi
 
   # generate infected userdata based on original
   local userdataInfected
@@ -237,7 +281,10 @@ checkEnv() {
 }
 
 # Download and execute the nix installer script.
+
 installNix() {
+  # install multiuser (system-wide with nix-daemon) Nix in the current system
+
   local nixReleaseBase='https://releases.nixos.org'
   local installURL="${nixReleaseBase}/nix/nix-${NIX_VERSION}/install"
   local shaURL="${installURL}.sha256"
@@ -279,12 +326,6 @@ installNix() {
 }
 
 infect() {
-  # install multiuser (system-wide with nix-daemon) Nix in the current system
-  if ! installNix; then
-      echo "Nix installation failed!"
-      exit 1
-  fi
-
   # this is needed solely for accepting the sp-module subflake
   # see https://github.com/NixOS/nix/issues/3978#issuecomment-952418478
   /root/.nix-profile/bin/nix flake lock ${LOCAL_FLAKE_DIR} \
@@ -336,9 +377,11 @@ set -o errexit
 
 apt update
 apt install -y git tar curl jq
+
 checkEnv
 prepareEnv
 makeSwap # smallest (512MB) droplet needs extra memory!
+installNix
 setupConf
 infect
 removeSwap
