@@ -107,7 +107,17 @@ EOF
       return 1
   fi
 
+  # FIXME it's questionable whether these modules are needed at all...
+  declare -a availableKernelModules=()
+
+  [ "$PROVIDER" == "digitalocean" ] \
+  && availableKernelModules+=('"ata_piix"' '"uhci_hcd"' '"xen_blkfront"')
+
+  [ "$(uname -m)" == "x86_64" ] \
+  && availableKernelModules+=('"vmw_pvscsi"')
+
   # TODO try nixos-generate-config first, resorting to the way below if failed
+  # FIXME "nvme" is not needed for hetzner?
 
   cat << EOF
 { modulesPath, ... }:
@@ -115,6 +125,7 @@ EOF
   imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
 $bootcfg
   boot.initrd.kernelModules = [ "nvme" ];
+  boot.initrd.availableKernelModules = [ ${availableKernelModules[@]} ];
   fileSystems."/" = { device = "$ROOTFSDEV"; fsType = "$ROOTFSTYPE"; };
   nixpkgs.hostPlatform = "${currentSystem}";
 }
