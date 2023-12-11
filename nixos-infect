@@ -278,6 +278,7 @@ checkEnv() {
   req xzcat            || { echo "ERROR: Missing xzcat";               return 1; }
   req awk              || { echo "ERROR: Missing awk";                 return 1; }
   req cut || req df    || { echo "ERROR: Missing coreutils (cut, df)"; return 1; }
+  req mkpasswd         || { echo "ERROR: Missing mkpasswd"; return 1; }
 }
 
 # Download and execute the nix installer script.
@@ -374,9 +375,10 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 set -o errexit
+shopt -s inherit_errexit
 
 apt update
-apt install -y git tar curl jq
+apt install -y git tar curl whois jq
 
 checkEnv
 prepareEnv
