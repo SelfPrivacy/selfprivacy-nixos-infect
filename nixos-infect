@@ -19,8 +19,10 @@
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
 : "${SSH_AUTHORIZED_KEY:=}"
 
+readonly NL=$'\n'
 readonly LOCAL_FLAKE_DIR="/etc/nixos"
 readonly SECRETS_FILEPATH="/etc/selfprivacy/secrets.json"
+DoNetConf=
 
 genOptionalSsh() {
   [ -n "${SSH_AUTHORIZED_KEY}" ] && cat << EOF
@@ -131,11 +133,12 @@ genDeploymentConfiguration() {
   fi
 
   cat << EOF
-{
+${DoNetConf:+"{ lib, ... }: "}{
   # The content below is static and belongs to this deployment only!
   # Do not copy this configuration file to another NixOS installation!
 
-  system.stateVersion = "$release";
+  system.stateVersion = "$release";`
+`$(if [ "$DoNetConf" == "y" ]; then echo -e "$NL"; genNetworkingConf; fi)
 }
 EOF
 }
@@ -172,6 +175,85 @@ setupConf() {
   local secrets
   secrets="$(genSecrets)"
   install -m0600 <(printf "%s" "$secrets") -DT ${SECRETS_FILEPATH}
+}
+
+# shellcheck disable=SC2207
+genNetworkingConf() {
+  # XXX It'd be better if we used procfs for all this...
+
+  local IFS=$'\n'
+  local eth0_name eth0_ip4s eth0_ip6s gateway gateway6 ether0 eth1_name
+  local interfaces1 extraRules1 predictable_inames
+
+  eth0_name="$(ip address show | grep '^2:' | awk -F': ' '{print $2}')"
+  eth0_ip4s=($(ip address show dev "$eth0_name" | grep 'inet ' | sed -r 's|.*inet ([0-9.]+)/([0-9]+).*|{ address="\1"; prefixLength=\2; }|'))
+  eth0_ip6s=($(ip address show dev "$eth0_name" | grep 'inet6 ' | sed -r 's|.*inet6 ([0-9a-f:]+)/([0-9]+).*|{ address="\1"; prefixLength=\2; }|')) || true
+  gateway="$(ip route show dev "$eth0_name" | grep default | sed -r 's|default via ([0-9.]+).*|\1|')"
+  gateway6="$(ip -6 route show dev "$eth0_name" | grep default | sed -r 's|default via ([0-9a-f:]+).*|\1|')" || true
+  ether0="$(ip address show dev "$eth0_name" | grep link/ether | sed -r 's|.*link/ether ([0-9a-f:]+) .*|\1|')"
+
+  eth1_name="$(ip address show | grep '^3:' | awk -F': ' '{print $2}')" || true
+  if [ -n "$eth1_name" ]; then
+      local eth1_ip4s eth1_ip6s ether1
+      eth1_ip4s="$(ip address show dev "$eth1_name" | grep 'inet ' | sed -r 's|.*inet ([0-9.]+)/([0-9]+).*|{ address="\1"; prefixLength=\2; }|')"
+      eth1_ip6s="$(ip address show dev "$eth1_name" | grep 'inet6 ' | sed -r 's|.*inet6 ([0-9a-f:]+)/([0-9]+).*|{ address="\1"; prefixLength=\2; }|')" || true
+      ether1="$(ip address show dev "$eth1_name" | grep link/ether | sed -r 's|.*link/ether ([0-9a-f:]+) .*|\1|')"
+      interfaces1=$(cat << EOF
+      $eth1_name = {
+        ipv4.addresses = [$(for a in "${eth1_ip4s[@]}"; do echo -n "
+          $a"; done)
+        ];
+        ipv6.addresses = [$(for a in "${eth1_ip6s[@]}"; do echo -n "
+          $a"; done)
+        ];
+      };
+EOF
+)
+      extraRules1="ATTR{address}==\"${ether1}\", NAME=\"${eth1_name}\""
+  else
+      interfaces1=""
+      extraRules1=""
+  fi
+
+  if [[ "$eth0_name" = eth* ]]; then
+      predictable_inames="usePredictableInterfaceNames = lib.mkForce false;"
+  else
+      predictable_inames="usePredictableInterfaceNames = lib.mkForce true;"
+  fi
+
+  local defaultGateway6=${gateway6:+defaultGateway6 = \{ address = "${gateway6}"; interface = "${eth0_name}"; \};}
+  local ipv6routes=${gateway6:+ipv6.routes = \[ \{ address = "${gateway6}"; prefixLength = 128; \} \];}
+  cat << EOF
+  # Networking configuration was populated by nixos-infect with the networking
+  # details gathered from the running system.
+  networking = {
+    defaultGateway = "${gateway}";`
+    `${defaultGateway6:+
+    defaultGateway6}
+    dhcpcd.enable = false;
+    $predictable_inames
+    interfaces = {
+      $eth0_name = {
+        ipv4.addresses = [$(for a in "${eth0_ip4s[@]}"; do echo -n "
+          $a"; done)
+        ];
+        ipv6.addresses = [$(for a in "${eth0_ip6s[@]}"; do echo -n "
+          $a"; done)
+        ];
+        ipv4.routes = [ { address = "${gateway}"; prefixLength = 32; } ];`
+        `${ipv6routes:+
+        $ipv6routes}
+      };`
+`${interfaces1:+
+$interfaces1}
+    };
+  };
+  services.udev.extraRules = ''
+    ATTR{address}=="${ether0}", NAME="${eth0_name}"`
+    `${extraRules1:+
+    $extraRules1}
+  '';
+EOF
 }
 
 makeSwap() {
@@ -373,9 +455,14 @@ infect() {
 
 set -o pipefail
 set -o nounset
-set -o xtrace
 set -o errexit
+set -o xtrace
 shopt -s inherit_errexit
+
+genNetworkingConf
+
+# digitalocean requires detailed network config to be generated
+[ "$PROVIDER" == "digitalocean" ] && DoNetConf="y"
 
 apt update
 apt install -y git tar curl whois jq
