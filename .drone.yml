@@ -76,7 +76,7 @@ steps:
 
 - name: sleep
   commands:
-    - sleep 420
+    - sleep 360
 
 - name: test
   environment:
@@ -88,6 +88,8 @@ steps:
       from_secret: TEST_EMAIL_PASS
     API_TOKEN:
       from_secret: USER_PASS
+    TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
+
   commands:
   - dig api.$DOMAIN
   - http -v --verify=false --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
@@ -96,22 +98,27 @@ steps:
   - echo "File to test nextcloud upload" > file
   - http -v --verify=false --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
   - http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#query-minimum-services
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service bitwarden
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service gitea
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service jitsi-meet
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service ocserv
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service pleroma
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#nixos-rebuild Rebuild
-  - counter=1; while true; do sleep 4; nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#query-all-services && break; [ "$counter" -le 30 ]; ((counter++)); done
+  - nix run $TESTS_REPO#query-minimum-services
+  - nix run $TESTS_REPO#enable-service bitwarden
+  - nix run $TESTS_REPO#enable-service gitea
+  - nix run $TESTS_REPO#enable-service jitsi-meet
+  - nix run $TESTS_REPO#enable-service ocserv
+  - nix run $TESTS_REPO#enable-service pleroma
+  - nix run $TESTS_REPO#nixos-rebuild Rebuild
+  - counter=0; while true; do sleep 4; nix run $TESTS_REPO#query-all-services && break; [ "$counter" -lt 30 ]; ((++counter)); done
+  - nix run $TESTS_REPO#nixos-rebuild Rollback
+  - counter=0; while true; do sleep 4; nix run $TESTS_REPO#query-minimum-services && break; [ "$counter" -lt 30 ]; ((++counter)); done
   #- > #http -v --verify=false --check-status --ignore-stdin GET https://password.$DOMAIN/admin/diagnostics
 
-# - name: sleep-after-failure
-#   commands:
-#     - sleep 240
-#   when:
-#     status:
-#       - failure
+- name: sleep-after-failure
+  environment:
+    DOMAIN:
+      from_secret: DOMAIN
+  commands:
+    - counter=0; while [ "$counter" -lt 100 ]; do sleep 10; nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; ((++counter)); done
+  when:
+    status:
+      - failure
 
 - name: teardown
   environment:
