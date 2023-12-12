@@ -86,6 +86,8 @@ steps:
       from_secret: USER_PASS
     TEST_EMAIL_PASS:
       from_secret: TEST_EMAIL_PASS
+    API_TOKEN:
+      from_secret: USER_PASS
   commands:
   - dig api.$DOMAIN
   - http -v --verify=false --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
