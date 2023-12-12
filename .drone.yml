@@ -96,7 +96,14 @@ steps:
   - echo "File to test nextcloud upload" > file
   - http -v --verify=false --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
   - http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
-  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#query-all-services
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#query-minimum-services
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service bitwarden
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service gitea
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service jitsi # - FIXME it should be jitsi-meet
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service ocserv
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#enable-service pleroma
+  - nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#nixos-rebuild Rebuild
+  - counter=1; while true; do sleep 4; nix --extra-experimental-features "nix-command flakes" run git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git#query-all-services && break; [ "$counter" -le 30 ]; ((counter++)); done
   #- > #http -v --verify=false --check-status --ignore-stdin GET https://password.$DOMAIN/admin/diagnostics
 
 # - name: sleep-after-failure
