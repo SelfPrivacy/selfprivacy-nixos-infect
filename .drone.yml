@@ -105,9 +105,11 @@ steps:
   - nix run $TESTS_REPO#enable-service ocserv
   - nix run $TESTS_REPO#enable-service pleroma
   - nix run $TESTS_REPO#nixos-rebuild Rebuild
-  - counter=0; while true; do sleep 4; nix run $TESTS_REPO#query-all-services && break; [ "$counter" -lt 30 ]; ((++counter)); done
+  - sleep 60
+  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-all-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining to retry"; done
   - nix run $TESTS_REPO#nixos-rebuild Rollback
-  - counter=0; while true; do sleep 4; nix run $TESTS_REPO#query-minimum-services && break; [ "$counter" -lt 30 ]; ((++counter)); done
+  - sleep 10
+  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-minimum-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining to retry"; done
   #- > #http -v --verify=false --check-status --ignore-stdin GET https://password.$DOMAIN/admin/diagnostics
 
 - name: sleep-after-failure
@@ -115,7 +117,7 @@ steps:
     DOMAIN:
       from_secret: DOMAIN
   commands:
-    - counter=0; while [ "$counter" -lt 100 ]; do sleep 10; nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; ((++counter)); done
+    - counter=0; while [ "$counter" -lt 100 ]; do sleep 10; nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; ((++counter)); echo "$((100 * 10 - counter * 10)) seconds remaining before teardown - login via ssh to shutdown the machine"; done
   when:
     status:
       - failure
