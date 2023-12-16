@@ -73,8 +73,7 @@ genSecrets() {
             "adminPassword": "$USER_PASS",
             "databasePassword": "$USER_PASS"
         }
-    },
-    "resticPassword": "$USER_PASS"
+    }
 }
 EOF
 }
