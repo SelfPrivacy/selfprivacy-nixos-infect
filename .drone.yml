@@ -106,10 +106,10 @@ steps:
   - nix run $TESTS_REPO#enable-service pleroma
   - nix run $TESTS_REPO#nixos-rebuild Rebuild
   - sleep 60
-  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-all-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining to retry"; done
+  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-all-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining for retries"; done
   - nix run $TESTS_REPO#nixos-rebuild Rollback
   - sleep 10
-  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-minimum-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining to retry"; done
+  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-minimum-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining for retries"; done
   #- > #http -v --verify=false --check-status --ignore-stdin GET https://password.$DOMAIN/admin/diagnostics
 
 - name: sleep-after-failure
