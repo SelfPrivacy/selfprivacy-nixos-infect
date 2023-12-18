@@ -100,7 +100,7 @@ steps:
   - echo "File to test nextcloud upload" > file
   - http -v --verify=false --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
   - http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
-  - nix run $TESTS_REPO#query-minimum-services
+  - timer=0; while true; do nix run $TESTS_REPO#query-minimum-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
   - nix run $TESTS_REPO#enable-service bitwarden
   - nix run $TESTS_REPO#enable-service gitea
   - nix run $TESTS_REPO#enable-service jitsi-meet
@@ -108,10 +108,10 @@ steps:
   - nix run $TESTS_REPO#enable-service pleroma
   - nix run $TESTS_REPO#nixos-rebuild Rebuild
   - sleep 60
-  - timer=0; while true; do sleep 10; nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; ((timer+=10)); echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; done
+  - timer=0; while true; do nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
   - nix run $TESTS_REPO#nixos-rebuild Rollback
   - sleep 10
-  - timer=0; while true; do sleep 10; nix run $TESTS_REPO#query-minimum-services && break; [ "$timer" -lt "$TIMEOUT_2" ]; ((timer+=10)); echo "$((TIMEOUT_2 - timer)) seconds remain for retries"; done
+  - timer=0; while true; do nix run $TESTS_REPO#query-minimum-services && break; [ "$timer" -lt "$TIMEOUT_2" ]; echo "$((TIMEOUT_2 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
   #- > #http -v --verify=false --check-status --ignore-stdin GET https://password.$DOMAIN/admin/diagnostics
 
 - name: sleep-after-failure
@@ -120,7 +120,7 @@ steps:
       from_secret: DOMAIN
     TIMEOUT: 1000
   commands:
-    - timer=0; while [ "$timer" -lt "$TIMEOUT" ]; do sleep 10; nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; ((timer+=10)); echo "$((TIMEOUT - timer)) seconds remain before teardown - login via ssh to shutdown the machine"; done
+    - timer=0; while [ "$timer" -lt "$TIMEOUT" ]; do nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; echo "$((TIMEOUT - timer)) seconds remain before teardown - login via ssh to shutdown the machine"; ((timer+=10)); sleep 10; done
   when:
     status:
       - failure
