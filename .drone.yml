@@ -107,7 +107,7 @@ steps:
   - nix run $TESTS_REPO#enable-service ocserv
   - nix run $TESTS_REPO#enable-service pleroma
   - nix run $TESTS_REPO#nixos-rebuild Rebuild
-  - sleep 60
+  - sleep 70
   - timer=0; while true; do nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
   - nix run $TESTS_REPO#nixos-rebuild Rollback
   - sleep 10
