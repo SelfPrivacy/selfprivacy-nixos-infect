@@ -89,6 +89,8 @@ steps:
     API_TOKEN:
       from_secret: USER_PASS
     TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
+    TIMEOUT_1: 100
+    TIMEOUT_2: 1000
 
   commands:
   - dig api.$DOMAIN
@@ -106,18 +108,19 @@ steps:
   - nix run $TESTS_REPO#enable-service pleroma
   - nix run $TESTS_REPO#nixos-rebuild Rebuild
   - sleep 60
-  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-all-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining for retries"; done
+  - timer=0; while true; do sleep 10; nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; ((timer+=10)); echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; done
   - nix run $TESTS_REPO#nixos-rebuild Rollback
   - sleep 10
-  - counter=0; while true; do sleep 10; nix run $TESTS_REPO#query-minimum-services && break; [ "$counter" -lt 10 ]; ((++counter)); echo "$((10 * 10 - counter * 10)) seconds remaining for retries"; done
+  - timer=0; while true; do sleep 10; nix run $TESTS_REPO#query-minimum-services && break; [ "$timer" -lt "$TIMEOUT_2" ]; ((timer+=10)); echo "$((TIMEOUT_2 - timer)) seconds remain for retries"; done
   #- > #http -v --verify=false --check-status --ignore-stdin GET https://password.$DOMAIN/admin/diagnostics
 
 - name: sleep-after-failure
   environment:
     DOMAIN:
       from_secret: DOMAIN
+    TIMEOUT: 1000
   commands:
-    - counter=0; while [ "$counter" -lt 100 ]; do sleep 10; nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; ((++counter)); echo "$((100 * 10 - counter * 10)) seconds remaining before teardown - login via ssh to shutdown the machine"; done
+    - timer=0; while [ "$timer" -lt "$TIMEOUT" ]; do sleep 10; nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; ((timer+=10)); echo "$((TIMEOUT - timer)) seconds remain before teardown - login via ssh to shutdown the machine"; done
   when:
     status:
       - failure
