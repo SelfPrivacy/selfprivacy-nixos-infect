@@ -11,7 +11,7 @@
 : "${PROVIDER:?PROVIDER variable is not set}"
 : "${DNS_PROVIDER_TYPE:?DNS_PROVIDER_TYPE variable is not set}"
 : "${STAGING_ACME:?STAGING_ACME variable is not set}"
-: "${CF_TOKEN:?CF_TOKEN variable is not set}"
+: "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
 : "${DB_PASSWORD:?DB_PASSWORD variable is not set}"
 : "${USER_PASS:?USER_PASS variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
@@ -66,7 +66,7 @@ genSecrets() {
     },
     "databasePassword": "$DB_PASSWORD",
     "dns": {
-        "apiKey": "$CF_TOKEN"
+        "apiKey": "$DNS_PROVIDER_TOKEN"
     },
     "modules": {
         "nextcloud": {
