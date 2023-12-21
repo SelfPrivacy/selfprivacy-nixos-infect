@@ -137,11 +137,11 @@ steps:
   - sleep 60
   - timer=0; while true; do nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
 
-- name: sleep-after-failure
+- name: sleep after failure
   environment:
     DOMAIN:
       from_secret: DOMAIN
-    TIMEOUT: 1000
+    TIMEOUT: 3000
   commands:
     - timer=0; while [ "$timer" -lt "$TIMEOUT" ]; do nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; echo "$((TIMEOUT - timer)) seconds remain before teardown - login via ssh to shutdown the machine"; ((timer+=10)); sleep 10; done
   when:
