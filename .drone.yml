@@ -78,7 +78,7 @@ steps:
   environment:
     DOMAIN:
       from_secret: DOMAIN
-    TIMEOUT: 100
+    TIMEOUT: 160
   commands:
   - sleep 300
   - t0="$(date '+%s')"; until nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w1 "$DOMAIN" 443; do sleep 10; cur_date="$(date '+%s')"; remaining=$((t0 + TIMEOUT - cur_date)); [ "$remaining" -gt 0 ]; echo "$remaining seconds remain before teardown"; done
