@@ -101,7 +101,7 @@ steps:
   - dig api.$DOMAIN
   - retry $TIMEOUT_1 10 http -v --verify=false --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
   - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
-  - http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -a admin:$USER_PASS
+  - retry 30 10 http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -a admin:$USER_PASS
   - echo "File to test nextcloud upload" > file
   - http -v --verify=false --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
   - http -v --verify=false --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
