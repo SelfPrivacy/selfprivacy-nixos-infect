@@ -125,7 +125,7 @@ steps:
   - sleep 1
   - nixos-rebuild Rebuild
   - sleep 70
-  - retry $TIMEOUT_1 10 $TESTS_REPO#query-all-services
+  - retry $TIMEOUT_1 10 query-all-services
   - sleep 1
   - nixos-rebuild Rollback
   - sleep 10
