@@ -97,7 +97,7 @@ steps:
     TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
     TIMEOUT_1: 100
   commands:
-  - source $(nix build $TESTS_REPO#library --print-out-paths)/library.sh
+  - source $(nix build $TESTS_REPO#library --print-out-paths)
   - dig api.$DOMAIN
   - retry $TIMEOUT_1 10 http -v --verify=false --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
   - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
@@ -116,13 +116,14 @@ steps:
     TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
     TIMEOUT_1: 100
   commands:
-  - timer=0; while true; do nix run $TESTS_REPO#query-minimum-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
-  - nix run $TESTS_REPO#enable-service bitwarden
-  - nix run $TESTS_REPO#enable-service gitea
-  - nix run $TESTS_REPO#enable-service jitsi-meet
-  - nix run $TESTS_REPO#enable-service ocserv
-  - nix run $TESTS_REPO#enable-service pleroma
-  - nix run $TESTS_REPO#nixos-rebuild Rebuild
+  - source $(nix build $TESTS_REPO#library --print-out-paths)
+  - retry $TIMEOUT_1 10 query-minimum-services
+  - enable-service bitwarden
+  - enable-service gitea
+  - enable-service jitsi-meet
+  - enable-service ocserv
+  - enable-service pleroma
+  - nixos-rebuild Rebuild
   - sleep 70
   - timer=0; while true; do nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
   - nix run $TESTS_REPO#nixos-rebuild Rollback
