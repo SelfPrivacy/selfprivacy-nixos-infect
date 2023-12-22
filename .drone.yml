@@ -123,20 +123,23 @@ steps:
   - enable-service jitsi-meet
   - enable-service ocserv
   - enable-service pleroma
+  - sleep 1
   - nixos-rebuild Rebuild
   - sleep 70
-  - timer=0; while true; do nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
-  - nix run $TESTS_REPO#nixos-rebuild Rollback
+  - retry $TIMEOUT_1 10 $TESTS_REPO#query-all-services
+  - sleep 1
+  - nixos-rebuild Rollback
   - sleep 10
-  - timer=0; while true; do nix run $TESTS_REPO#query-minimum-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
-  - nix run $TESTS_REPO#enable-service bitwarden
-  - nix run $TESTS_REPO#enable-service gitea
-  - nix run $TESTS_REPO#enable-service jitsi-meet
-  - nix run $TESTS_REPO#enable-service ocserv
-  - nix run $TESTS_REPO#enable-service pleroma
-  - nix run $TESTS_REPO#nixos-rebuild Rebuild
+  - retry $TIMEOUT_1 10 query-minimum-services
+  - enable-service bitwarden
+  - enable-service gitea
+  - enable-service jitsi-meet
+  - enable-service ocserv
+  - enable-service pleroma
+  - sleep 1
+  - nixos-rebuild Rebuild
   - sleep 60
-  - timer=0; while true; do nix run $TESTS_REPO#query-all-services && break; [ "$timer" -lt "$TIMEOUT_1" ]; echo "$((TIMEOUT_1 - timer)) seconds remain for retries"; sleep 10; ((timer+=10)); done
+  - retry $TIMEOUT_1 10 query-all-services
 
 - name: sleep after failure
   environment:
