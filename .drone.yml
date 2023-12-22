@@ -20,8 +20,13 @@ steps:
 
   commands:
   # Create infect user script and then push it to a remote machine on server creation.
-  - echo '#! /usr/bin/env bash' > infect.sh
-  - echo "curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/$INFECT_SOURCE_BRANCH/nixos-infect | PROVIDER=hetzner DOMAIN=$DOMAIN LUSER=cicdcicd USER_PASS=\"$USER_PASS\" DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN DNS_PROVIDER_TYPE=CLOUDFLARE DB_PASSWORD=\"$USER_PASS\" API_TOKEN=\"$USER_PASS\" HOSTNAME=selfprivacy-ci-test STAGING_ACME=true NIX_VERSION=2.18.1 NIXOS_CONFIG_NAME=sp-nixos CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz SSH_AUTHORIZED_KEY=\"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K\" bash 2>&1 | tee /root/infect.log" >> infect.sh
+  - |
+    cat << EOF > infect.sh
+    #! /usr/bin/env bash
+
+    export STAGING_ACME=false
+    EOF
+  - echo "curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/$INFECT_SOURCE_BRANCH/nixos-infect | PROVIDER=hetzner DOMAIN=$DOMAIN LUSER=cicdcicd USER_PASS=\"$USER_PASS\" DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN DNS_PROVIDER_TYPE=CLOUDFLARE DB_PASSWORD=\"$USER_PASS\" API_TOKEN=\"$USER_PASS\" HOSTNAME=selfprivacy-ci-test NIX_VERSION=2.18.1 NIXOS_CONFIG_NAME=sp-nixos CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz SSH_AUTHORIZED_KEY=\"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K\" bash 2>&1 | tee /root/infect.log" >> infect.sh
   - http -v --check-status --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 user_data=@infect.sh automount:=false location=fsn1
 
 - name: dns
@@ -98,13 +103,16 @@ steps:
     TIMEOUT_1: 100
   commands:
   - source $(nix build $TESTS_REPO#library --print-out-paths)
+  # ideally it should depend on $STAGING_ACME
+  # VERIFY=$(if [[ $STAGING_ACME == true ]]; then echo "no"; else echo "yes"; fi)
+  - VERIFY="on"
   - dig api.$DOMAIN
-  - retry $TIMEOUT_1 10 http -v --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
+  - retry $TIMEOUT_1 10 http -v --verify=$VERIFY --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
   - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
-  - http -v --check-status --ignore-stdin GET https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -a admin:$USER_PASS
+  - http -v --verify=$VERIFY --check-status --ignore-stdin GET https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -a admin:$USER_PASS
   - echo "File to test nextcloud upload" > file
-  - http -v --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
-  - http -v --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
+  - http -v --verify=$VERIFY --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
+  - http -v --verify=$VERIFY --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
 
 - name: API & nixos-rebuild test
   environment:
