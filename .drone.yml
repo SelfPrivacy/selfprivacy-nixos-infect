@@ -102,17 +102,18 @@ steps:
     TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
     TIMEOUT_1: 100
   commands:
-  - source $(nix build $TESTS_REPO#library --print-out-paths)
   # ideally it should depend on $STAGING_ACME
-  # VERIFY=$(if [[ $STAGING_ACME == true ]]; then echo "no"; else echo "yes"; fi)
-  - VERIFY="on"
+  # INSECURE=$(if [[ $STAGING_ACME == true ]]; then echo "--insecure"; else echo ""; fi)
+  - INSECURE="--insecure"
+  - source $(nix build $TESTS_REPO#library --print-out-paths)
   - dig api.$DOMAIN
-  - retry $TIMEOUT_1 10 http -v --verify=$VERIFY --check-status --ignore-stdin GET https://api.$DOMAIN/services/status Authorization:"Bearer $USER_PASS"
+  - >
+    retry $TIMEOUT_1 10 curl https://api.$DOMAIN/services/status --fail-with-body $INSECURE -H "Authorization: Bearer $USER_PASS"
   - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
-  - http -v --verify=$VERIFY --check-status --ignore-stdin GET https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -a admin:$USER_PASS
+  - curl https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json --fail-with-body $INSECURE -u "admin:$USER_PASS" | jq -re '.ocs.meta.status == "ok"'
   - echo "File to test nextcloud upload" > file
-  - http -v --verify=$VERIFY --check-status --ignore-stdin PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file @file -a admin:$USER_PASS
-  - http -v --verify=$VERIFY --check-status --ignore-stdin GET https://cloud.$DOMAIN/remote.php/dav/files/admin/file -a admin:$USER_PASS
+  - curl -X PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file --fail-with-body $INSECURE -d @file -u "admin:$USER_PASS"
+  - curl https://cloud.$DOMAIN/remote.php/dav/files/admin/file --fail-with-body $INSECURE -u "admin:$USER_PASS"
 
 - name: API & nixos-rebuild test
   environment:
