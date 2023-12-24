@@ -110,10 +110,13 @@ steps:
   - >
     retry $TIMEOUT_1 10 curl https://api.$DOMAIN/services/status --fail-with-body $INSECURE -H "Authorization: Bearer $USER_PASS"
   - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
-  - curl https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json --fail-with-body $INSECURE -u "admin:$USER_PASS" | jq -re '.ocs.meta.status == "ok"'
+  - >
+    curl https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json --fail-with-body $INSECURE -u "admin:$USER_PASS" | jq -re ".ocs.meta.status == \"ok\""
   - echo "File to test nextcloud upload" > file
-  - curl -X PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file --fail-with-body $INSECURE -d @file -u "admin:$USER_PASS"
-  - curl https://cloud.$DOMAIN/remote.php/dav/files/admin/file --fail-with-body $INSECURE -u "admin:$USER_PASS"
+  - >
+    curl -X PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file --fail-with-body $INSECURE -d @file -u "admin:$USER_PASS"
+  - >
+    curl https://cloud.$DOMAIN/remote.php/dav/files/admin/file --fail-with-body $INSECURE -u "admin:$USER_PASS"
 
 - name: API & nixos-rebuild test
   environment:
