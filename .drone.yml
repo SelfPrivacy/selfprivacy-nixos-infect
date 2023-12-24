@@ -131,20 +131,17 @@ steps:
   - enable-service jitsi-meet
   - enable-service ocserv
   - enable-service pleroma
-  - sleep 1
   - nixos-rebuild Rebuild
-  - sleep 70
+  - sleep 100
   - retry $TIMEOUT_1 10 query-all-services
-  - sleep 1
   - nixos-rebuild Rollback
-  - sleep 10
+  - sleep 30
   - retry $TIMEOUT_1 10 query-minimum-services
   - enable-service bitwarden
   - enable-service gitea
   - enable-service jitsi-meet
   - enable-service ocserv
   - enable-service pleroma
-  - sleep 1
   - nixos-rebuild Rebuild
   - sleep 60
   - retry $TIMEOUT_1 10 query-all-services
