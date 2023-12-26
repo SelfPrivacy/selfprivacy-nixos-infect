@@ -16,7 +16,7 @@ steps:
       from_secret: CLOUDFLARE_TOKEN
     USER_PASS:
       from_secret: USER_PASS
-    INFECT_SOURCE_BRANCH: ${DRONE_SOURCE_BRANCH}
+    INFECT_COMMIT_SHA: ${DRONE_COMMIT_SHA}
 
   commands:
   # Create infect user script and then push it to a remote machine on server creation.
@@ -24,9 +24,29 @@ steps:
     cat << EOF > infect.sh
     #! /usr/bin/env bash
 
-    export STAGING_ACME=true
+    set -o allexport
+    set -o pipefail
+    set -o errexit
+
+    API_TOKEN="$USER_PASS"
+    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz
+    DB_PASSWORD="$USER_PASS"
+    DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
+    DNS_PROVIDER_TYPE=CLOUDFLARE
+    DOMAIN=$DOMAIN
+    HOSTNAME=selfprivacy-ci-test
+    LUSER=cicdcicd
+    NIXOS_CONFIG_NAME=sp-nixos
+    NIX_VERSION=2.18.1
+    PROVIDER=hetzner
+    SSH_AUTHORIZED_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K"
+    STAGING_ACME=true
+    USER_PASS="$USER_PASS"
+
+    curl --fail https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/commit/$INFECT_COMMIT_SHA/nixos-infect \
+    | bash 2>&1 | tee /root/nixos-infect.log
     EOF
-  - echo "curl https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/branch/$INFECT_SOURCE_BRANCH/nixos-infect | PROVIDER=hetzner DOMAIN=$DOMAIN LUSER=cicdcicd USER_PASS=\"$USER_PASS\" DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN DNS_PROVIDER_TYPE=CLOUDFLARE DB_PASSWORD=\"$USER_PASS\" API_TOKEN=\"$USER_PASS\" HOSTNAME=selfprivacy-ci-test NIX_VERSION=2.18.1 NIXOS_CONFIG_NAME=sp-nixos CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz SSH_AUTHORIZED_KEY=\"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K\" bash 2>&1 | tee /root/infect.log" >> infect.sh
+  - cat infect.sh
   - http -v --check-status --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 user_data=@infect.sh automount:=false location=fsn1
 
 - name: dns
