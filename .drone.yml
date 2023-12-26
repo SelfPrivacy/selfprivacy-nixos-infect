@@ -29,7 +29,7 @@ steps:
     set -o errexit
 
     API_TOKEN="$USER_PASS"
-    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/master.tar.gz
+    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/eb9aebc8ace3f82748dc325374058df534056420.tar.gz
     DB_PASSWORD="$USER_PASS"
     DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
     DNS_PROVIDER_TYPE=CLOUDFLARE
