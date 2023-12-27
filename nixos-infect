@@ -13,7 +13,7 @@
 : "${STAGING_ACME:?STAGING_ACME variable is not set}"
 : "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
 : "${DB_PASSWORD:?DB_PASSWORD variable is not set}"
-: "${USER_PASS:?USER_PASS variable is not set}"
+: "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${NIXOS_CONFIG_ID:?NIXOS_CONFIG_ID variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
@@ -293,6 +293,12 @@ findESP() {
 }
 
 prepareEnv() {
+  if ! USER_PASS="$(base64 -d <<<"$ENCODED_PASSWORD")"; then
+      echo "Error decoding ENCODED_PASSWORD from Base64!"
+      exit 1
+  fi
+  readonly USER_PASS
+
   isEFI=0
   [ -d /sys/firmware/efi ] && isEFI=1
 

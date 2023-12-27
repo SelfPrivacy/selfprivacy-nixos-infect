@@ -19,6 +19,9 @@ steps:
     INFECT_COMMIT_SHA: ${DRONE_COMMIT_SHA}
 
   commands:
+  - set -o nounset
+  - > # TODO pass Base64 encoded password from Drone instead of this
+    ENCODED_PASSWORD="$(base64 <<<"$USER_PASS")"
   # Create infect user script and then push it to a remote machine on server creation.
   - |
     cat << EOF > infect.sh
@@ -34,6 +37,7 @@ steps:
     DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
     DNS_PROVIDER_TYPE=CLOUDFLARE
     DOMAIN=$DOMAIN
+    ENCODED_PASSWORD="$ENCODED_PASSWORD"
     HOSTNAME=selfprivacy-ci-test
     LUSER=cicdcicd
     NIXOS_CONFIG_ID=default
@@ -41,7 +45,6 @@ steps:
     PROVIDER=hetzner
     SSH_AUTHORIZED_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K"
     STAGING_ACME=true
-    USER_PASS="$USER_PASS"
 
     curl --fail https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/commit/$INFECT_COMMIT_SHA/nixos-infect \
     | bash 2>&1 | tee /root/nixos-infect.log
