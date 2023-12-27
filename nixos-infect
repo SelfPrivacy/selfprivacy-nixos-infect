@@ -5,17 +5,18 @@
 # - https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect
 
 : "${API_TOKEN:?API_TOKEN variable is not set}"
-: "${DOMAIN:?DOMAIN variable is not set}"
-: "${LUSER:?LUSER variable is not set}"
-: "${HOSTNAME:?HOSTNAME variable is not set}"
-: "${PROVIDER:?PROVIDER variable is not set}"
-: "${DNS_PROVIDER_TYPE:?DNS_PROVIDER_TYPE variable is not set}"
-: "${STAGING_ACME:?STAGING_ACME variable is not set}"
-: "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
-: "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
-: "${NIX_VERSION:?NIX_VERSION variable is not set}"
-: "${NIXOS_CONFIG_ID:?NIXOS_CONFIG_ID variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
+: "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
+: "${DNS_PROVIDER_TYPE:?DNS_PROVIDER_TYPE variable is not set}"
+: "${DOMAIN:?DOMAIN variable is not set}"
+: "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
+: "${HOSTNAME:?HOSTNAME variable is not set}"
+: "${LUSER:?LUSER variable is not set}"
+: "${NIXOS_CONFIG_ID:?NIXOS_CONFIG_ID variable is not set}"
+: "${NIX_VERSION:?NIX_VERSION variable is not set}"
+: "${PROVIDER:?PROVIDER variable is not set}"
+: "${STAGING_ACME:?STAGING_ACME variable is not set}"
+
 : "${SSH_AUTHORIZED_KEY:=}"
 
 readonly NL=$'\n'
