@@ -48,10 +48,16 @@ steps:
     STAGING_ACME=true
 
     curl --fail https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/commit/$INFECT_COMMIT_SHA/nixos-infect \
-    | bash 2>&1 | tee /root/nixos-infect.log
+    | bash 2>&1 | tee /root/infect.log
     EOF
   - cat infect.sh
-  - http -v --check-status --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 user_data=@infect.sh automount:=false location=fsn1
+  - location=fsn1
+  - set -o pipefail
+  - >
+    volume_id="$(http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/volumes Authorization:"Bearer $PASSWORD" format=ext4 size:=10 location=$location name=10gb-by-drone-ci automount:=false | jq -re .volume.id)"
+  # TODO pass linux device volume_id name to infect.sh script
+  - >
+    http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 volumes:=[$volume_id] user_data=@infect.sh automount:=false location=$location
 
 - name: dns
   environment:
@@ -214,6 +220,15 @@ steps:
     echo "$ZONE_ID"
   - >
     echo "$result" | jq '.[] | "\(.id)"' | while read id ; do echo "Deleting $id"; http -v --check-status --ignore-stdin DELETE https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$(echo $id | cut -f 2 -d '"') Authorization:"Bearer $CLOUDFLARE_TOKEN"; done
+  - location="fsn1"
+  - volume_name="10gb-by-drone-ci"
+  - >
+    volumes_json="$(http -d --print=HBb --ignore-stdin GET https://api.hetzner.cloud/v1/volumes Authorization:"Bearer $PASSWORD" name=$volume_name)"
+    # as of 2023-12-27 Hetzner ignores "name" query parameter (and others too)!!
+  - >
+    volume_id="$(jq <<<"$volumes_json" -re "(.volumes[] | select(.name == \"$volume_name\")).id")"
+  - >
+    http -d --print=HBb --ignore-stdin DELETE https://api.hetzner.cloud/v1/volumes/$volume_id Authorization:"Bearer $PASSWORD"
   when:
     status:
     - failure

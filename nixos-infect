@@ -32,10 +32,27 @@ genOptionalSsh() {
 EOF
 }
 
+# TODO receive disk device from outside
+determine2ndDisk() {
+  case "$PROVIDER" in
+      hetzner)
+          echo "/dev/sdb"
+          ;;
+      digitalocean)
+          echo "/dev/sda"
+          ;;
+      *)
+          return 1
+          ;;
+  esac
+}
+
 # Merge original userdata.json with deployment specific fields and print result.
 genUserdata() {
-  local HASHED_PASSWORD userdata_infect release
-  HASHED_PASSWORD="$(mkpasswd -m sha-512 "$USER_PASS")"
+  local hashed_password diskDeviceName userdata_infect
+  hashed_password="$(mkpasswd -m sha-512 "$USER_PASS")"
+  diskDevice="$(determine2ndDisk)"
+  diskDeviceName="${diskDevice##/dev}"
 
   userdata_infect=$(cat << EOF
 {
@@ -48,9 +65,33 @@ genUserdata() {
         "provider": "$PROVIDER"
     },
     "domain": "$DOMAIN",
-    "hashedMasterPassword": "$HASHED_PASSWORD",
+    "hashedMasterPassword": "$hashed_password",
     "hostname": "$HOSTNAME",
-    "username": "$LUSER"
+    "username": "$LUSER",
+    "volumes": [
+        {
+            "device": "$diskDevice",
+            "mountPoint": "/volumes/$diskDeviceName",
+            "fsType": "ext4"
+        }
+    ],
+    "modules": {
+        "bitwarden": {
+            "location": "$diskDeviceName"
+        },
+        "gitea": {
+            "location": "$diskDeviceName"
+        },
+        "nextcloud": {
+            "location": "$diskDeviceName"
+        },
+        "pleroma": {
+            "location": "$diskDeviceName"
+        },
+        "simple-nixos-mailserver": {
+            "location": "$diskDeviceName"
+        }
+    }
 }
 EOF
 )
@@ -471,6 +512,7 @@ infect() {
 set -o errtrace
 set -o nounset
 set -o pipefail
+set -o xtrace
 shopt -s inherit_errexit
 trap 'echo ${LINENO}: "$BASH_COMMAND"; exit 1' ERR
 
