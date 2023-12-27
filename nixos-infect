@@ -153,7 +153,7 @@ EOF
 
 setupConf() {
   mkdir -p ${LOCAL_FLAKE_DIR}
-  if ! curl "${CONFIG_URL}" \
+  if ! curl --fail "${CONFIG_URL}" \
   | tar -xz -C ${LOCAL_FLAKE_DIR} --strip-components=1 --exclude=".*"
   then
       echo "Error downloading/extracting top level flake configuration!"
@@ -389,12 +389,12 @@ installNix() {
   fi
 
   echo "Downloading install script from ${installURL}..."
-  if ! curl "${installURL}" -o "${tmpNixInstall}" &>/dev/null; then
+  if ! curl --fail "${installURL}" -o "${tmpNixInstall}" &>/dev/null; then
       echo "Failure while downloading Nix install script!"
       return 1
   fi
 
-  if ! sha="$(curl "${shaURL}")"; then
+  if ! sha="$(curl --fail "${shaURL}")"; then
       echo "Failure while downloading Nix install script sha!"
       return 1
   fi
