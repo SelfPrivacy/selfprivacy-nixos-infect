@@ -31,7 +31,7 @@ steps:
     set -o errtrace
     set -o pipefail
     shopt -s inherit_errexit
-    trap 'echo \$LINENO: \"\$BASH_COMMAND\"; exit 1' ERR
+    trap 'echo \$LINENO: "\$BASH_COMMAND"; exit 1' ERR
 
     API_TOKEN="$USER_PASS"
     CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/0f886d76e93dd366db7c53a8f6b672702910b99b.tar.gz
