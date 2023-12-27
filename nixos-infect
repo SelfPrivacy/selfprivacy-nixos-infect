@@ -12,7 +12,6 @@
 : "${DNS_PROVIDER_TYPE:?DNS_PROVIDER_TYPE variable is not set}"
 : "${STAGING_ACME:?STAGING_ACME variable is not set}"
 : "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
-: "${DB_PASSWORD:?DB_PASSWORD variable is not set}"
 : "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${NIXOS_CONFIG_ID:?NIXOS_CONFIG_ID variable is not set}"
@@ -60,13 +59,16 @@ EOF
 }
 
 genSecrets() {
+  local dbpass
+  dbpass="$(shuf --random-source=/dev/urandom -erz -n32 {A..Z} {a..z} {0..9} | tr -d '\n')"
+
   cat << EOF
 {
     "api": {
         "token": "$API_TOKEN",
         "skippedMigrations": ["migrate_to_selfprivacy_channel", "mount_volume"]
     },
-    "databasePassword": "$DB_PASSWORD",
+    "databasePassword": "$dbpass",
     "dns": {
         "apiKey": "$DNS_PROVIDER_TOKEN"
     },
@@ -374,7 +376,8 @@ checkEnv() {
   req xzcat            || { echo "ERROR: Missing xzcat";               return 1; }
   req awk              || { echo "ERROR: Missing awk";                 return 1; }
   req cut || req df    || { echo "ERROR: Missing coreutils (cut, df)"; return 1; }
-  req mkpasswd         || { echo "ERROR: Missing mkpasswd"; return 1; }
+  req mkpasswd         || { echo "ERROR: Missing mkpasswd";            return 1; }
+  req shuf             || { echo "ERROR: Missing shuf";                return 1; }
 }
 
 # Download and execute the nix installer script.
@@ -464,11 +467,11 @@ infect() {
   /nix/var/nix/profiles/system/sw/bin/nix-collect-garbage
 }
 
-set -o pipefail
+set -o errtrace
 set -o nounset
-set -o errexit
-set -o xtrace
+set -o pipefail
 shopt -s inherit_errexit
+trap 'echo ${LINENO}: "$BASH_COMMAND"; exit 1' ERR
 
 genNetworkingConf
 

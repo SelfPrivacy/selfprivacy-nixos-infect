@@ -33,7 +33,6 @@ steps:
 
     API_TOKEN="$USER_PASS"
     CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/0f886d76e93dd366db7c53a8f6b672702910b99b.tar.gz
-    DB_PASSWORD="$USER_PASS"
     DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
     DNS_PROVIDER_TYPE=CLOUDFLARE
     DOMAIN=$DOMAIN
