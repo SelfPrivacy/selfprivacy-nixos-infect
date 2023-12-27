@@ -32,19 +32,22 @@ genOptionalSsh() {
 EOF
 }
 
-# TODO receive disk device from outside
+# TODO receive disk device path from outside
 determine2ndDisk() {
+  local guess rootFsDev
   case "$PROVIDER" in
       hetzner)
-          echo "/dev/sdb"
+          guess="/dev/sdb"
           ;;
       digitalocean)
-          echo "/dev/sda"
+          guess="/dev/sda"
           ;;
       *)
           return 1
           ;;
   esac
+  rootFsDev="$(findmnt -no source -T /)"
+  [[ -b "$guess" && "$guess" != "$rootFsDev" ]] && echo "$guess"
 }
 
 # Merge original userdata.json with deployment specific fields and print result.
