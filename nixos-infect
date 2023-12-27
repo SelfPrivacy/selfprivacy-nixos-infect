@@ -417,15 +417,12 @@ installNix() {
 }
 
 infect() {
-  # this is needed solely for accepting the sp-module subflake
+  # this is needed solely for accepting the sp-module sub-flake
   # see https://github.com/NixOS/nix/issues/3978#issuecomment-952418478
-  /root/.nix-profile/bin/nix flake lock ${LOCAL_FLAKE_DIR} \
-  --extra-experimental-features "nix-command flakes" \
-  --override-input sp-modules ${LOCAL_FLAKE_DIR}/sp-modules
+  $NIX "${NIX_OPTS[@]}" flake lock ${LOCAL_FLAKE_DIR} --update-input sp-modules
 
   echo "nix build the configuration flake..."
-  if ! /root/.nix-profile/bin/nix build \
-  --extra-experimental-features "nix-command flakes" \
+  if ! $NIX "${NIX_OPTS[@]}" build \
   --profile /nix/var/nix/profiles/system \
   ${LOCAL_FLAKE_DIR}/#nixosConfigurations.sp-nixos.config.system.build.toplevel
   then
