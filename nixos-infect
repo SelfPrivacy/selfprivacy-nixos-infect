@@ -4,6 +4,7 @@
 # - https://github.com/elitak/nixos-infect
 # - https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect
 
+# mandatory variables
 : "${API_TOKEN:?API_TOKEN variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
 : "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
@@ -12,12 +13,14 @@
 : "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
 : "${HOSTNAME:?HOSTNAME variable is not set}"
 : "${LUSER:?LUSER variable is not set}"
-: "${NIXOS_CONFIG_ID:?NIXOS_CONFIG_ID variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${PROVIDER:?PROVIDER variable is not set}"
 : "${STAGING_ACME:?STAGING_ACME variable is not set}"
 
+# optional variables
+: "${NIXOS_CONFIG_ID:=default}"
 : "${SSH_AUTHORIZED_KEY:=}"
+: "${VOLUME_DEV_PATH:=}"
 
 readonly NL=$'\n'
 readonly LOCAL_FLAKE_DIR="/etc/nixos"
@@ -34,20 +37,24 @@ EOF
 
 # TODO receive disk device path from outside
 determine2ndDisk() {
-  local guess rootFsDev
-  case "$PROVIDER" in
-      hetzner)
-          guess="/dev/sdb"
-          ;;
-      digitalocean)
-          guess="/dev/sda"
-          ;;
-      *)
-          return 1
-          ;;
-  esac
+  local volDevPath rootFsDev
+  if [ -n "$VOLUME_DEV_PATH" ]; then
+      volDevPath="$VOLUME_DEV_PATH"
+  else
+      case "$PROVIDER" in
+          hetzner)
+              volDevPath="/dev/sdb"
+              ;;
+          digitalocean)
+              volDevPath="/dev/sda"
+              ;;
+          *)
+              return 1
+              ;;
+      esac
+  fi
   rootFsDev="$(findmnt -no source -T /)"
-  [[ -b "$guess" && "$guess" != "$rootFsDev" ]] && echo "$guess"
+  [[ -b "$volDevPath" && "$volDevPath" != "$rootFsDev" ]] && echo "$volDevPath"
 }
 
 # Merge original userdata.json with deployment specific fields and print result.
