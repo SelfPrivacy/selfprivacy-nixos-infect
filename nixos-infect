@@ -15,7 +15,7 @@
 : "${DB_PASSWORD:?DB_PASSWORD variable is not set}"
 : "${USER_PASS:?USER_PASS variable is not set}"
 : "${NIX_VERSION:?NIX_VERSION variable is not set}"
-: "${NIXOS_CONFIG_NAME:?NIXOS_CONFIG_NAME variable is not set}"
+: "${NIXOS_CONFIG_ID:?NIXOS_CONFIG_ID variable is not set}"
 : "${CONFIG_URL:?CONFIG_URL variable is not set}"
 : "${SSH_AUTHORIZED_KEY:=}"
 
@@ -424,7 +424,7 @@ infect() {
   echo "nix build the configuration flake..."
   if ! $NIX "${NIX_OPTS[@]}" build \
   --profile /nix/var/nix/profiles/system \
-  ${LOCAL_FLAKE_DIR}/#nixosConfigurations.sp-nixos.config.system.build.toplevel
+  ${LOCAL_FLAKE_DIR}/#nixosConfigurations."$NIXOS_CONFIG_ID".config.system.build.toplevel
   then
       echo "Failed!"
       exit 1

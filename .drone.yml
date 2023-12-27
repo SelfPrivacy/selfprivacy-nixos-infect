@@ -29,14 +29,14 @@ steps:
     set -o errexit
 
     API_TOKEN="$USER_PASS"
-    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/eb9aebc8ace3f82748dc325374058df534056420.tar.gz
+    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/58d43eec2f69c8fada5eea3e20b917de26bf8bb6.tar.gz
     DB_PASSWORD="$USER_PASS"
     DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
     DNS_PROVIDER_TYPE=CLOUDFLARE
     DOMAIN=$DOMAIN
     HOSTNAME=selfprivacy-ci-test
     LUSER=cicdcicd
-    NIXOS_CONFIG_NAME=sp-nixos
+    NIXOS_CONFIG_ID=default
     NIX_VERSION=2.18.1
     PROVIDER=hetzner
     SSH_AUTHORIZED_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K"
