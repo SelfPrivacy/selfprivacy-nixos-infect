@@ -65,7 +65,7 @@ genUserdata() {
   local hashed_password diskDeviceName userdata_infect
   hashed_password="$(mkpasswd -m sha-512 "$USER_PASS")"
   diskDevice="$(determine2ndDisk)"
-  diskDeviceName="${diskDevice##/dev}"
+  diskDeviceName="${diskDevice##/dev/}"
 
   userdata_infect=$(cat << EOF
 {
