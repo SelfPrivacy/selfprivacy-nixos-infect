@@ -34,7 +34,7 @@ steps:
     trap 'echo \$LINENO: "\$BASH_COMMAND"; exit 1' ERR
 
     API_TOKEN="$USER_PASS"
-    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/6d0239ad5c61c4bc708238908fe6814d931d15e7.tar.gz
+    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/4d18c8dba9765bde9040ddf1c285bec96ba23f43.tar.gz
     DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
     DNS_PROVIDER_TYPE=CLOUDFLARE
     DOMAIN=$DOMAIN
