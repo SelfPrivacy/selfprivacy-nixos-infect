@@ -1,0 +1,235 @@
+kind: pipeline
+type: exec
+name: default
+
+clone:
+  disable: true
+
+steps:
+- name: deploy
+  environment:
+    PASSWORD:
+      from_secret: HETZNER_TOKEN
+    DOMAIN:
+      from_secret: DOMAIN
+    CLOUDFLARE_TOKEN:
+      from_secret: CLOUDFLARE_TOKEN
+    USER_PASS:
+      from_secret: USER_PASS
+    INFECT_COMMIT_SHA: ${DRONE_COMMIT_SHA}
+
+  commands:
+  - set -o nounset
+  - > # TODO pass Base64 encoded password from Drone instead of this
+    ENCODED_PASSWORD="$(base64 <<<"$USER_PASS")"
+  # Create infect user script and then push it to a remote machine on server creation.
+  - |
+    cat << EOF > infect.sh
+    #! /usr/bin/env bash
+
+    set -o allexport
+    set -o errtrace
+    set -o pipefail
+    shopt -s inherit_errexit
+    trap 'echo \$LINENO: "\$BASH_COMMAND"; exit 1' ERR
+
+    API_TOKEN="$USER_PASS"
+    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/4d18c8dba9765bde9040ddf1c285bec96ba23f43.tar.gz
+    DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
+    DNS_PROVIDER_TYPE=CLOUDFLARE
+    DOMAIN=$DOMAIN
+    ENCODED_PASSWORD="$ENCODED_PASSWORD"
+    HOSTNAME=selfprivacy-ci-test
+    LUSER=cicdcicd
+    NIXOS_CONFIG_ID=default
+    NIX_VERSION=2.18.1
+    PROVIDER=hetzner
+    SSH_AUTHORIZED_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K"
+    STAGING_ACME=true
+
+    curl --fail https://git.selfprivacy.org/SelfPrivacy/selfprivacy-nixos-infect/raw/commit/$INFECT_COMMIT_SHA/nixos-infect \
+    | bash 2>&1 | tee /root/infect.log
+    EOF
+  - cat infect.sh
+  - location=fsn1
+  - set -o pipefail
+  - >
+    volume_id="$(http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/volumes Authorization:"Bearer $PASSWORD" format=ext4 size:=10 location=$location name=10gb-by-drone-ci automount:=false | jq -re .volume.id)"
+  # TODO pass linux device volume_id name to infect.sh script
+  - >
+    http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 volumes:=[$volume_id] user_data=@infect.sh automount:=false location=$location
+
+- name: dns
+  environment:
+    PASSWORD:
+      from_secret: HETZNER_TOKEN
+    CLOUDFLARE_TOKEN:
+      from_secret: CLOUDFLARE_TOKEN
+    DOMAIN:
+      from_secret: DOMAIN
+    ZONE_ID:
+      from_secret: ZONE_ID
+
+  commands:
+  # Read all available machines and export IP of 'ci-sibling'
+  # Create DNS entires for main domain and subdomains
+  - >
+    curl -s -H "Authorization: Bearer $PASSWORD" 'https://api.hetzner.cloud/v1/servers' > .machine.json
+  - >
+    export machineip=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].public_net.ipv4.ip else null end' .machine.json; done | grep -v null | sed 's/"//' | sed 's/"//' )
+  - echo $machineip
+  - >
+    curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$DOMAIN"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"A","name":"@","content":"'"$$machineip"'","ttl":3600,"priority":10,"proxied":false}'
+  - >
+    http --check-status --ignore-stdin POST https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records Authorization:"Bearer $CLOUDFLARE_TOKEN" type=A name=api content=$machineip ttl:=3600 priority:=10 proxied:=false
+  - >
+    http --check-status --ignore-stdin POST https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records Authorization:"Bearer $CLOUDFLARE_TOKEN" type=A name=cloud content=$machineip ttl:=3600 priority:=10 proxied:=false
+  - >
+    http --check-status --ignore-stdin POST https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records Authorization:"Bearer $CLOUDFLARE_TOKEN" type=A name=password content=$machineip ttl:=3600 priority:=10 proxied:=false
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"MX","name":"@","content":"'"$$DOMAIN"'","ttl":3600,"priority":10,"proxied":false}'
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data '{"type":"TXT","name":"_dmarc","content":"v=DMARC1; p=none","ttl":18000,"priority":10,"proxied":false}'
+  - >
+    curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records"
+    -H "Authorization: Bearer $CLOUDFLARE_TOKEN"
+    -H "Content-Type: application/json"
+    --data "{\"type\":\"TXT\",\"name\":\"$DOMAIN\",\"content\":\"v=spf1 a mx ip4:$machineip -all\",\"ttl\":18000,\"priority\":10,\"proxied\":false}"
+
+- name: wait for NixOS boot
+  environment:
+    DOMAIN:
+      from_secret: DOMAIN
+    TIMEOUT: 160
+  commands:
+  - sleep 300
+  - t0="$(date '+%s')"; until nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w1 "$DOMAIN" 443; do sleep 10; cur_date="$(date '+%s')"; remaining=$((t0 + TIMEOUT - cur_date)); [ "$remaining" -gt 0 ]; echo "$remaining seconds remain before teardown"; done
+  - echo "give time for obtaining ACME certificate"
+  - sleep 60
+
+- name: basic test
+  environment:
+    DOMAIN:
+      from_secret: DOMAIN
+    USER_PASS:
+      from_secret: USER_PASS
+    TEST_EMAIL_PASS:
+      from_secret: TEST_EMAIL_PASS
+    API_TOKEN:
+      from_secret: USER_PASS
+    TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
+    TIMEOUT_1: 100
+  commands:
+  # ideally it should depend on $STAGING_ACME
+  # CERT_VERIFY=$(if [[ $STAGING_ACME == true ]]; then echo "--cacert root.pem"; else echo ""; fi)
+  - CERT_VERIFY="--cacert root.pem"
+  - source $(nix build $TESTS_REPO#library --print-out-paths)
+  - curl https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem -sS --fail -o root.pem
+  - dig api.$DOMAIN
+  - >
+    retry $TIMEOUT_1 10 curl https://api.$DOMAIN/services/status -sS --fail-with-body $CERT_VERIFY -H "Authorization: Bearer $USER_PASS"
+  - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
+  - >
+    curl https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -sS --fail-with-body $CERT_VERIFY -u "admin:$USER_PASS" | jq -re '.ocs.meta.status == "ok"'
+  - echo 'File contents to test nextcloud upload' > file
+  - >
+    curl -X PUT https://cloud.$DOMAIN/remote.php/dav/files/admin/file -sS --fail-with-body $CERT_VERIFY -d @file -u "admin:$USER_PASS"
+  - >
+    curl https://cloud.$DOMAIN/remote.php/dav/files/admin/file -sS --fail-with-body $CERT_VERIFY -u "admin:$USER_PASS"
+
+- name: API & nixos-rebuild test
+  environment:
+    DOMAIN:
+      from_secret: DOMAIN
+    API_TOKEN:
+      from_secret: USER_PASS
+    TESTS_REPO: git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git
+    TIMEOUT_1: 100
+  commands:
+  - source $(nix build $TESTS_REPO#library --print-out-paths)
+  - retry $TIMEOUT_1 10 query-minimum-services
+  - enable-service bitwarden
+  - enable-service gitea
+  - enable-service jitsi-meet
+  - enable-service ocserv
+  - enable-service pleroma
+  - nixos-rebuild Rebuild
+  - sleep 100
+  - retry $TIMEOUT_1 10 query-all-services
+  - nixos-rebuild Rollback
+  - sleep 30
+  - retry $TIMEOUT_1 10 query-minimum-services
+  - enable-service bitwarden
+  - enable-service gitea
+  - enable-service jitsi-meet
+  - enable-service ocserv
+  - enable-service pleroma
+  - nixos-rebuild Rebuild
+  - sleep 60
+  - retry $TIMEOUT_1 10 query-all-services
+
+- name: sleep after failure
+  environment:
+    DOMAIN:
+      from_secret: DOMAIN
+    TIMEOUT: 1500
+  commands:
+    - timer=0; while [ "$timer" -lt "$TIMEOUT" ]; do nix shell --inputs-from git+https://git.selfprivacy.org/alexoundos/selfprivacy-tests.git nixpkgs#netcat -c nc -zv -w4 "$DOMAIN" 22; echo "$((TIMEOUT - timer)) seconds remain before teardown - login via ssh to shutdown the machine"; ((timer+=10)); sleep 10; done
+  when:
+    status:
+      - failure
+
+- name: teardown
+  environment:
+    PASSWORD:
+      from_secret: HETZNER_TOKEN
+    CLOUDFLARE_TOKEN:
+      from_secret: CLOUDFLARE_TOKEN
+    DOMAIN:
+      from_secret: DOMAIN
+    ZONE_ID:
+      from_secret: ZONE_ID
+  commands:
+  # Delete our machine called 'ci-sibling' and all the found DNS records on it.
+  - >
+    curl -s "https://api.hetzner.cloud/v1/servers" -H "Authorization: Bearer $PASSWORD" > .hetzner_servers.json
+  - >
+    export machineid=$( for i in {0..24}; do jq 'if .servers['$i'].name == "ci-sibling" then .servers['$i'].id else null end' .hetzner_servers.json; done | grep -v null | sed 's/"//g')
+  - >
+    curl -s -X DELETE "https://api.hetzner.cloud/v1/servers/$machineid" -H "Authorization: Bearer $PASSWORD"
+  - >
+    json=$(curl -X GET "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" -H "Authorization: Bearer $CLOUDFLARE_TOKEN" -H "Content-Type: application/json")
+  - >
+    echo "$json" > .dns-records.json
+  - >
+    result=$(jq -r ".result" <<< "$json")
+  - >
+    echo "$ZONE_ID"
+  - >
+    echo "$result" | jq '.[] | "\(.id)"' | while read id ; do echo "Deleting $id"; http -v --check-status --ignore-stdin DELETE https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$(echo $id | cut -f 2 -d '"') Authorization:"Bearer $CLOUDFLARE_TOKEN"; done
+  - location="fsn1"
+  - volume_name="10gb-by-drone-ci"
+  - >
+    volumes_json="$(http -d --print=HBb --ignore-stdin GET https://api.hetzner.cloud/v1/volumes Authorization:"Bearer $PASSWORD" name=$volume_name)"
+    # as of 2023-12-27 Hetzner ignores "name" query parameter (and others too)!!
+  - >
+    volume_id="$(jq <<<"$volumes_json" -re "(.volumes[] | select(.name == \"$volume_name\")).id")"
+  - >
+    http -d --print=HBb --ignore-stdin DELETE https://api.hetzner.cloud/v1/volumes/$volume_id Authorization:"Bearer $PASSWORD"
+  when:
+    status:
+    - failure
+    - success
