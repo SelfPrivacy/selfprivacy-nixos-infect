@@ -227,6 +227,7 @@ steps:
     # as of 2023-12-27 Hetzner ignores "name" query parameter (and others too)!!
   - >
     volume_id="$(jq <<<"$volumes_json" -re "(.volumes[] | select(.name == \"$volume_name\")).id")"
+  - sleep 1
   - >
     http -d --print=HBb --ignore-stdin DELETE https://api.hetzner.cloud/v1/volumes/$volume_id Authorization:"Bearer $PASSWORD"
   when:
