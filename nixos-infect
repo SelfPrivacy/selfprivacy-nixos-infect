@@ -6,14 +6,12 @@
 
 # mandatory variables
 : "${API_TOKEN:?API_TOKEN variable is not set}"
-: "${CONFIG_URL:?CONFIG_URL variable is not set}"
 : "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
 : "${DNS_PROVIDER_TYPE:?DNS_PROVIDER_TYPE variable is not set}"
 : "${DOMAIN:?DOMAIN variable is not set}"
 : "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
 : "${HOSTNAME:?HOSTNAME variable is not set}"
 : "${LUSER:?LUSER variable is not set}"
-: "${NIX_VERSION:?NIX_VERSION variable is not set}"
 : "${PROVIDER:?PROVIDER variable is not set}"
 
 # optional variables
@@ -21,6 +19,9 @@
 : "${SSH_AUTHORIZED_KEY:=}"
 : "${VOLUME_DEV_PATH:=}"
 : "${STAGING_ACME:=false}"
+
+readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/2569a42a73e359b21c7c86b4ee413fb435ec8db3.tar.gz"
+readonly NIX_VERSION="2.18.1"
 
 readonly NL=$'\n'
 readonly LOCAL_FLAKE_DIR="/etc/nixos"

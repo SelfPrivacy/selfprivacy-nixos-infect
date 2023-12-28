@@ -34,7 +34,6 @@ steps:
     trap 'echo \$LINENO: "\$BASH_COMMAND"; exit 1' ERR
 
     API_TOKEN="$USER_PASS"
-    CONFIG_URL=https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/2569a42a73e359b21c7c86b4ee413fb435ec8db3.tar.gz
     DNS_PROVIDER_TOKEN=$CLOUDFLARE_TOKEN
     DNS_PROVIDER_TYPE=CLOUDFLARE
     DOMAIN=$DOMAIN
@@ -42,7 +41,6 @@ steps:
     HOSTNAME=selfprivacy-ci-test
     LUSER=cicdcicd
     NIXOS_CONFIG_ID=default
-    NIX_VERSION=2.18.1
     PROVIDER=HETZNER
     SSH_AUTHORIZED_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMBb3yVhYF4slhf1iQCiGLOVcbGKP/MmkQiEMl2un+4K"
     STAGING_ACME=true
