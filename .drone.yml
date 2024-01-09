@@ -138,7 +138,7 @@ steps:
   - curl https://letsencrypt.org/certs/staging/letsencrypt-stg-root-x1.pem -sS --fail -o root.pem
   - dig api.$DOMAIN
   - >
-    retry $TIMEOUT_1 10 curl https://api.$DOMAIN/services/status -sS --fail-with-body $CERT_VERIFY -H "Authorization: Bearer $USER_PASS"
+    retry $TIMEOUT_1 10 curl https://api.$DOMAIN/api/version -sS --fail-with-body $CERT_VERIFY -H "Authorization: Bearer $USER_PASS"
   - swaks --to ci@$DOMAIN -s selfprivacy.org -tls -au test@selfprivacy.org -ap $TEST_EMAIL_PASS -ahp
   - >
     curl https://cloud.$DOMAIN/ocs/v2.php/apps/serverinfo/api/v1/info?format=json -sS --fail-with-body $CERT_VERIFY -u "admin:$USER_PASS" | jq -re '.ocs.meta.status == "ok"'
