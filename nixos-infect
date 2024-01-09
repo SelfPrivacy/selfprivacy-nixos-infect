@@ -520,7 +520,8 @@ infect() {
   fi
 
   # Remove nix installed by the "install" script.
-  rm -fv /nix/var/nix/profiles/default*
+  rm -fv /nix/var/nix/profiles/default* /root/.nix-profile
+  rm -rv /nix/var/nix/profiles/per-user
   /nix/var/nix/profiles/system/sw/bin/nix-collect-garbage
 }
 
