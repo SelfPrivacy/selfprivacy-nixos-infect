@@ -286,15 +286,15 @@ EOF
       predictable_inames="usePredictableInterfaceNames = lib.mkForce true;"
   fi
 
-  local defaultGateway6=${gateway6:+defaultGateway6 = \{ address = "${gateway6}"; interface = "${eth0_name}"; \};}
-  local ipv6routes=${gateway6:+ipv6.routes = \[ \{ address = "${gateway6}"; prefixLength = 128; \} \];}
+  local defaultGateway6=${gateway6:+defaultGateway6 = \{ address = \"${gateway6}\"; interface = \"${eth0_name}\"; \};}
+  local ipv6routes=${gateway6:+ipv6.routes = \[ \{ address = \"${gateway6}\"; prefixLength = 128; \} \];}
   cat << EOF
   # Networking configuration was populated by nixos-infect with the networking
   # details gathered from the running system.
   networking = {
     defaultGateway = "${gateway}";`
     `${defaultGateway6:+
-    defaultGateway6}
+    $defaultGateway6}
     dhcpcd.enable = false;
     $predictable_inames
     interfaces = {
