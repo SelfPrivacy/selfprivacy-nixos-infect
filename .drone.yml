@@ -164,6 +164,7 @@ steps:
   - enable-service jitsi-meet
   - enable-service ocserv
   - enable-service pleroma
+  - enable-service roundcube
   - nixos-rebuild Rebuild
   - sleep 180
   - retry $TIMEOUT_1 10 query-all-services
