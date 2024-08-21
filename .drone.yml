@@ -55,7 +55,7 @@ steps:
     volume_id="$(http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/volumes Authorization:"Bearer $PASSWORD" format=ext4 size:=10 location=$location name=10gb-by-drone-ci automount:=false | jq -re .volume.id)"
   # TODO pass linux device volume_id name to infect.sh script
   - >
-    http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx11 start_after_create:=true image=ubuntu-20.04 volumes:=[$volume_id] user_data=@infect.sh automount:=false location=$location
+    http -d --print=HBb --ignore-stdin POST https://api.hetzner.cloud/v1/servers Authorization:"Bearer $PASSWORD" name=ci-sibling server_type=cx22 start_after_create:=true image=ubuntu-20.04 volumes:=[$volume_id] user_data=@infect.sh automount:=false location=$location
 
 - name: dns
   environment:
