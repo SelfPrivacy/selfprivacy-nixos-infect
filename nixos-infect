@@ -520,6 +520,9 @@ infect() {
     find /boot -depth ! -path /boot -exec rm -rf {} +
   fi
 
+  # Fix for https://github.com/elitak/nixos-infect/issues/225, make nixos-rebuild-ng think it's running on NixOS system.
+  ln -s /nix/var/nix/profiles/system /run/current-system
+
   echo "make configuration boot by default..."
   if ! /nix/var/nix/profiles/system/bin/switch-to-configuration boot; then
       echo "Failed!"; exit 1
