@@ -21,7 +21,7 @@
 : "${STAGING_ACME:=false}"
 
 readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/eee1427d00cbab2568820f33fe99f00a6d763150.tar.gz"
-readonly NIX_VERSION="2.18.5"
+readonly NIX_VERSION="2.26.3"
 
 readonly NL=$'\n'
 readonly LOCAL_FLAKE_DIR="/etc/nixos"
