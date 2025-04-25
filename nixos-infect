@@ -20,8 +20,8 @@
 : "${VOLUME_DEV_PATH:=}"
 : "${STAGING_ACME:=false}"
 
-readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/4e7666bcff2cb9da3eb71c2f08b5295790dddafc.tar.gz"
-readonly NIX_VERSION="2.18.5"
+readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/529de2176371d4cee830abbed2c703eb20cd8298.tar.gz"
+readonly NIX_VERSION="2.26.3"
 
 readonly NL=$'\n'
 readonly LOCAL_FLAKE_DIR="/etc/nixos"
@@ -88,6 +88,9 @@ genUserdata() {
             "fsType": "ext4"
         }
     ],
+    "postgresql": {
+      "location": "$diskDeviceName"
+    },
     "modules": {
         "bitwarden": {
             "location": "$diskDeviceName"
