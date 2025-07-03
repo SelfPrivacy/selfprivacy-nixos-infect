@@ -20,7 +20,7 @@
 : "${VOLUME_DEV_PATH:=}"
 : "${STAGING_ACME:=false}"
 
-readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/359a57979b53ef679d09b5813807859a565c0760.tar.gz"
+readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/070776f6b84caa58a1c6625e75bd0a7bedc0653f.tar.gz"
 readonly NIX_VERSION="2.26.3"
 
 readonly NL=$'\n'
