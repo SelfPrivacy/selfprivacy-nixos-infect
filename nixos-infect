@@ -66,6 +66,7 @@ genUserdata() {
   hashed_password="$(mkpasswd -m sha-512 "$USER_PASS")"
   diskDevice="$(determine2ndDisk)"
   diskDeviceName="${diskDevice##/dev/}"
+  diskDeviceUuid="/dev/disk/by-uuid/$(blkid -s UUID -o value $diskDevice)"
 
   userdata_infect=$(cat << EOF
 {
@@ -75,7 +76,9 @@ genUserdata() {
         "useStagingACME": $STAGING_ACME
     },
     "server": {
-        "provider": "$PROVIDER"
+        "provider": "$PROVIDER",
+        "rootPartition": "$ROOTFSUUIDDEV",
+        "rootPartitionName": "$(basename "$ROOTFSDEV")"
     },
     "domain": "$DOMAIN",
     "hashedMasterPassword": "$hashed_password",
@@ -83,7 +86,7 @@ genUserdata() {
     "username": "$LUSER",
     "volumes": [
         {
-            "device": "$diskDevice",
+            "device": "$diskDeviceUuid",
             "mountPoint": "/volumes/$diskDeviceName",
             "fsType": "ext4"
         }
@@ -188,7 +191,7 @@ EOF
 $bootcfg
   boot.initrd.kernelModules = [ "nvme" ];
   boot.initrd.availableKernelModules = [ ${availableKernelModules[@]} ];
-  fileSystems."/" = { device = "$ROOTFSDEV"; fsType = "$ROOTFSTYPE"; };
+  fileSystems."/" = { device = "$ROOTFSUUIDDEV"; fsType = "$ROOTFSTYPE"; };
   nixpkgs.hostPlatform = "${currentSystem}";
 }
 EOF
@@ -376,6 +379,7 @@ prepareEnv() {
   # Retrieve root fs block device
   #                   (get root mount)  (get partition or logical volume)
   ROOTFSDEV=$(mount | grep "on / type" | awk '{print $1;}')
+  ROOTFSUUIDDEV="/dev/disk/by-uuid/$(blkid -s UUID -o value $ROOTFSDEV)"
   ROOTFSTYPE=$(df "$ROOTFSDEV" --output=fstype | sed 1d)
 
   # DigitalOcean doesn't seem to set USER while running user data
