@@ -341,7 +341,7 @@ makeSwap() {
 
 removeSwap() {
   swapoff -a
-  rm -vf /tmp/nixos-infect.*.swp
+  rm -vf /nixos-infect.*.swp
 }
 
 findESP() {
