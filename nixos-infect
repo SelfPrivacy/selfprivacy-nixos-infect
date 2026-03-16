@@ -303,7 +303,7 @@ EOF
   networking = {
     defaultGateway = "${gateway}";`
     `${defaultGateway6:+
-    defaultGateway6}
+    $defaultGateway6}
     dhcpcd.enable = false;
     $predictable_inames
     interfaces = {
