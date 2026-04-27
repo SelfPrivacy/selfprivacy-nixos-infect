@@ -20,6 +20,9 @@
 : "${VOLUME_DEV_PATH:=}"
 : "${STAGING_ACME:=false}"
 : "${DNS_PROVIDER_TOKEN_ID:=}"
+: "${DNS_PROVIDER_URL:=}"
+: "${DNS_PROVIDER_TENANT:=}"
+: "${DNS_PROVIDER_SECONDARY_TOKEN:=}"
 
 readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/aeafa6fea90164549c5ebe48f1a2a1d138fe68a1.tar.gz"
 readonly NIX_VERSION="2.31.4"
@@ -135,8 +138,11 @@ genSecrets() {
     },
     "databasePassword": "$dbpass",
     "dns": {
-        ${DNS_PROVIDER_TOKEN_ID:+"\"apiKeyId\": \"$DNS_PROVIDER_TOKEN_ID\","}
-        "apiKey": "$DNS_PROVIDER_TOKEN"
+        ${DNS_PROVIDER_TOKEN_ID:+"\"tokenId\": \"$DNS_PROVIDER_TOKEN_ID\","}
+        ${DNS_PROVIDER_URL:+"\"url\": \"$DNS_PROVIDER_URL\","}
+        ${DNS_PROVIDER_TENANT:+"\"tenant\": \"$DNS_PROVIDER_TENANT\","}
+        ${DNS_PROVIDER_SECONDARY_TOKEN:+"\"secondaryToken\": \"$DNS_PROVIDER_SECONDARY_TOKEN\","}
+        "token": "$DNS_PROVIDER_TOKEN"
     },
     "modules": {
         "nextcloud": {
