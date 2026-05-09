@@ -24,7 +24,7 @@
 : "${DNS_PROVIDER_TENANT:=}"
 : "${DNS_PROVIDER_SECONDARY_TOKEN:=}"
 
-readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/aeafa6fea90164549c5ebe48f1a2a1d138fe68a1.tar.gz"
+readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/31102ab762a8251377b52e086e0e13db55c3e61b.tar.gz"
 readonly NIX_VERSION="2.31.4"
 
 readonly NL=$'\n'
