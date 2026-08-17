@@ -9,9 +9,7 @@
 : "${DNS_PROVIDER_TOKEN:?DNS_PROVIDER_TOKEN variable is not set}"
 : "${DNS_PROVIDER_TYPE:?DNS_PROVIDER_TYPE variable is not set}"
 : "${DOMAIN:?DOMAIN variable is not set}"
-: "${ENCODED_PASSWORD:?ENCODED_PASSWORD variable is not set}"
 : "${HOSTNAME:?HOSTNAME variable is not set}"
-: "${LUSER:?LUSER variable is not set}"
 : "${PROVIDER:?PROVIDER variable is not set}"
 
 # optional variables
@@ -24,7 +22,7 @@
 : "${DNS_PROVIDER_TENANT:=}"
 : "${DNS_PROVIDER_SECONDARY_TOKEN:=}"
 
-readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/2049b5340a8d13ff47b4b08280823af7a0ab265e.tar.gz"
+readonly CONFIG_URL="https://git.selfprivacy.org/api/v1/repos/SelfPrivacy/selfprivacy-nixos-template/archive/6958a2a3c9a9d5500031e0d08d6cd1127c882c38.tar.gz"
 readonly NIX_VERSION="2.31.4"
 
 readonly NL=$'\n'
@@ -70,8 +68,7 @@ determine2ndDisk() {
 
 # Merge original userdata.json with deployment specific fields and print result.
 genUserdata() {
-  local hashed_password diskDeviceName userdata_infect
-  hashed_password="$(mkpasswd -m sha-512 "$USER_PASS")"
+  local diskDeviceName userdata_infect
   diskDevice="$(determine2ndDisk)"
   diskDeviceName="${diskDevice##/dev/}"
   diskDeviceUuid="/dev/disk/by-uuid/$(blkid -s UUID -o value $diskDevice)"
@@ -92,9 +89,7 @@ genUserdata() {
         "rootPartitionName": "$(basename "$ROOTFSDEV")"
     },
     "domain": "$DOMAIN",
-    "hashedMasterPassword": "$hashed_password",
     "hostname": "$HOSTNAME",
-    "username": "$LUSER",
     "volumes": [
         {
             "device": "$diskDeviceUuid",
@@ -150,12 +145,6 @@ genSecrets() {
         ${DNS_PROVIDER_TENANT:+"\"tenant\": \"$DNS_PROVIDER_TENANT\","}
         ${DNS_PROVIDER_SECONDARY_TOKEN:+"\"secondaryToken\": \"$DNS_PROVIDER_SECONDARY_TOKEN\","}
         "token": "$DNS_PROVIDER_TOKEN"
-    },
-    "modules": {
-        "nextcloud": {
-            "adminPassword": "$USER_PASS",
-            "databasePassword": "$USER_PASS"
-        }
     }
 }
 EOF
@@ -374,12 +363,6 @@ findESP() {
 }
 
 prepareEnv() {
-  if ! USER_PASS="$(base64 -d <<<"$ENCODED_PASSWORD")"; then
-      echo "Error decoding ENCODED_PASSWORD from Base64!"
-      exit 1
-  fi
-  readonly USER_PASS
-
   isEFI=0
   [ -d /sys/firmware/efi ] && isEFI=1
 
